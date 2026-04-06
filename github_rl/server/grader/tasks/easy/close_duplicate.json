@@ -1,0 +1,54 @@
+{
+  "task_id": "close-duplicate-issue",
+  "difficulty": "easy",
+  "category": "issues",
+  "instructions": "Close issue #5. It is a confirmed duplicate of issue #2. Add a comment explaining it is a duplicate before closing.",
+  "max_steps": 10,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n\n@app.route('/health')\ndef health():\n    return {'status': 'ok'}\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"},
+      {"id": 2, "repo_id": 1, "name": "duplicate", "color": "cfd3d7"}
+    ],
+    "issues": [
+      {"id": 2, "repo_id": 1, "number": 2, "title": "Login endpoint returns 500 on malformed JWT", "body": "When sending a malformed JWT token to /api/login, the server returns a 500 Internal Server Error instead of a 401 Unauthorized. Stack trace attached.", "status": "open"},
+      {"id": 5, "repo_id": 1, "number": 5, "title": "Server error when sending bad auth token", "body": "Sending an invalid token to the login endpoint causes a server crash. This seems like the same issue reported earlier.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 2, "label_id": 1},
+      {"issue_id": 5, "label_id": 1}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "A comment was added to issue #5 mentioning it is a duplicate",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"id": 1, "field": "body", "substring": "duplicate"},
+      "weight": 0.3
+    },
+    {
+      "description": "Issue #5 is closed",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 5, "field": "status", "value": "closed"},
+      "weight": 0.7
+    }
+  ]
+}

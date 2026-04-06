@@ -1,0 +1,149 @@
+{
+  "task_id": "triage-security-issues",
+  "difficulty": "hard",
+  "category": "multi_step",
+  "instructions": "Triage these 5 open security issues. For each issue:\n- Read the issue carefully and assign the correct severity label (critical, high, medium, or low).\n- Assign to the correct team member: alice handles authentication issues, bob handles infrastructure/network issues, charlie handles application-level vulnerabilities.\n- Add a triage comment summarizing the risk and recommended next steps.\n\nIssues:\n#1 - Hardcoded admin password (assign to alice, critical)\n#2 - CORS misconfiguration allows any origin (assign to charlie, high)\n#3 - TLS 1.0 still enabled on staging (assign to bob, medium)\n#4 - Debug endpoints exposed in production (assign to charlie, high)\n#5 - SSH key rotation overdue by 6 months (assign to bob, low)",
+  "max_steps": 25,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "critical", "color": "b60205"},
+      {"id": 2, "repo_id": 1, "name": "high", "color": "d93f0b"},
+      {"id": 3, "repo_id": 1, "name": "medium", "color": "fbca04"},
+      {"id": 4, "repo_id": 1, "name": "low", "color": "0e8a16"},
+      {"id": 5, "repo_id": 1, "name": "security", "color": "e11d48"},
+      {"id": 6, "repo_id": 1, "name": "triage", "color": "d876e3"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Hardcoded admin password in auth module", "body": "The admin account password is hardcoded as 'admin123' in src/auth.py line 42. This was found during a routine code review. Any attacker who reads the source can gain full admin access.", "status": "open"},
+      {"id": 2, "repo_id": 1, "number": 2, "title": "CORS misconfiguration allows any origin", "body": "The Access-Control-Allow-Origin header is set to '*' in production. This allows any website to make authenticated requests to our API, potentially enabling CSRF-like attacks to exfiltrate user data.", "status": "open"},
+      {"id": 3, "repo_id": 1, "number": 3, "title": "TLS 1.0 still enabled on staging server", "body": "Our staging server at staging.example.com still accepts TLS 1.0 connections. While staging is not public-facing, this is a compliance concern and could be exploited if the network is compromised.", "status": "open"},
+      {"id": 4, "repo_id": 1, "number": 4, "title": "Debug endpoints exposed in production", "body": "The /debug/vars and /debug/pprof endpoints are accessible in production without authentication. These leak internal server metrics, goroutine stacks, and memory profiles that could aid an attacker.", "status": "open"},
+      {"id": 5, "repo_id": 1, "number": 5, "title": "SSH key rotation overdue by 6 months", "body": "Our deploy SSH keys were last rotated over 6 months ago, exceeding our 90-day rotation policy. No evidence of compromise but this is a compliance violation.", "status": "open"}
+    ],
+    "issue_labels": [],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Issue #1 has the 'critical' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 1, "label_id": 1},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #1 is assigned to alice",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 1, "field": "assignee", "value": "alice"},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #1 has a triage comment",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 1},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #2 has the 'high' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 2, "label_id": 2},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #2 is assigned to charlie",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 2, "field": "assignee", "value": "charlie"},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #2 has a triage comment",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 2},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #3 has the 'medium' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 3, "label_id": 3},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #3 is assigned to bob",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 3, "field": "assignee", "value": "bob"},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #3 has a triage comment",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 3},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #4 has the 'high' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 4, "label_id": 2},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #4 is assigned to charlie",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 4, "field": "assignee", "value": "charlie"},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #4 has a triage comment",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 4},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #5 has the 'low' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 5, "label_id": 4},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #5 is assigned to bob",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 5, "field": "assignee", "value": "bob"},
+      "weight": 0.07
+    },
+    {
+      "description": "Issue #5 has a triage comment",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 5},
+      "weight": 0.06
+    }
+  ]
+}

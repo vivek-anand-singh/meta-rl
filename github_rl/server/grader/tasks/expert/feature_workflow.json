@@ -1,0 +1,130 @@
+{
+  "task_id": "secure-feature-workflow",
+  "difficulty": "expert",
+  "category": "multi_step",
+  "instructions": "Implement the full feature development workflow for adding API rate limiting (a security hardening feature):\n\n1. Create a project board called 'Feature: API Rate Limiting' to track the work.\n2. The existing feature request is issue #1. Add it to the project board and move it to 'In Progress'.\n3. Create 2 sub-issues: 'Implement rate limiter middleware' (assign to bob) and 'Add rate limit configuration and tests' (assign to charlie). Label both with 'enhancement' and 'security'. Add both to the project board.\n4. Create a feature branch 'feature/rate-limiting' from main.\n5. Push a new file src/middleware/rate_limiter.py to the feature branch with a token-bucket rate limiter implementation.\n6. Push a new file config/rate_limits.yaml to the feature branch with default rate limit settings.\n7. Open a PR titled 'Feature: Add API rate limiting middleware' from the feature branch to main. Link it to issue #1. In the PR body, describe the implementation approach and security benefits. Assign alice as reviewer.\n8. Move issue #1 on the project board to 'In Review'.",
+  "max_steps": 40,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask, request, jsonify\nfrom src.auth import verify_token\n\napp = Flask(__name__)\n\n@app.before_request\ndef authenticate():\n    if request.path == '/health':\n        return\n    token = request.headers.get('Authorization', '').replace('Bearer ', '')\n    user = verify_token(token)\n    if not user:\n        return jsonify({'error': 'unauthorized'}), 401\n    request.user = user\n\n@app.route('/health')\ndef health():\n    return {'status': 'ok'}\n\n@app.route('/api/data')\ndef get_data():\n    return {'data': 'sensitive information', 'user': request.user['sub']}\n"},
+      {"id": 2, "branch_id": 1, "path": "src/auth.py", "content": "import jwt\nimport os\n\nSECRET = os.environ.get('JWT_SECRET', 'change-me')\n\ndef verify_token(token):\n    try:\n        return jwt.decode(token, SECRET, algorithms=['HS256'])\n    except jwt.InvalidTokenError:\n        return None\n"},
+      {"id": 3, "branch_id": 1, "path": "src/__init__.py", "content": ""},
+      {"id": 4, "branch_id": 1, "path": "requirements.txt", "content": "flask==2.3.0\nPyJWT==2.8.0\nredis==5.0.0\ngunicorn==21.2.0\n"},
+      {"id": 5, "branch_id": 1, "path": "config/settings.py", "content": "import os\n\nDEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'\nDATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost:5432/mydb')\nREDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')\nLOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')\n"},
+      {"id": 6, "branch_id": 1, "path": "tests/test_app.py", "content": "import pytest\nfrom src.app import app\n\n@pytest.fixture\ndef client():\n    app.config['TESTING'] = True\n    with app.test_client() as client:\n        yield client\n\ndef test_health(client):\n    rv = client.get('/health')\n    assert rv.status_code == 200\n\ndef test_unauthorized(client):\n    rv = client.get('/api/data')\n    assert rv.status_code == 401\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "enhancement", "color": "a2eeef"},
+      {"id": 2, "repo_id": 1, "name": "security", "color": "e11d48"},
+      {"id": 3, "repo_id": 1, "name": "bug", "color": "d73a4a"},
+      {"id": 4, "repo_id": 1, "name": "critical", "color": "b60205"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Feature request: API rate limiting", "body": "We need rate limiting on all API endpoints to prevent brute-force attacks and API abuse. Requirements:\n- Token bucket algorithm\n- Configurable per-endpoint limits\n- Redis-backed for distributed deployments\n- Return standard 429 Too Many Requests with Retry-After header\n- Whitelist for internal service accounts", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 1, "label_id": 1},
+      {"issue_id": 1, "label_id": 2}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Project board 'Feature: API Rate Limiting' exists",
+      "table": "projects",
+      "check": "exists",
+      "params": {"name": "Feature: API Rate Limiting"},
+      "weight": 0.1
+    },
+    {
+      "description": "Issue #1 is added to the project board",
+      "table": "project_items",
+      "check": "exists",
+      "params": {"project_id": 1, "issue_id": 1},
+      "weight": 0.05
+    },
+    {
+      "description": "At least 2 sub-issues were created",
+      "table": "issues",
+      "check": "row_count_gte",
+      "params": {"threshold": 3, "where": {"repo_id": 1}},
+      "weight": 0.1
+    },
+    {
+      "description": "Sub-issues have 'security' label applied",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 2, "label_id": 2},
+      "weight": 0.05
+    },
+    {
+      "description": "Sub-issues have 'enhancement' label applied",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 2, "label_id": 1},
+      "weight": 0.05
+    },
+    {
+      "description": "Feature branch 'feature/rate-limiting' exists",
+      "table": "branches",
+      "check": "exists",
+      "params": {"repo_id": 1, "name": "feature/rate-limiting"},
+      "weight": 0.1
+    },
+    {
+      "description": "Rate limiter implementation file exists on feature branch",
+      "table": "files",
+      "check": "exists",
+      "params": {"branch_id": 2, "path": "src/middleware/rate_limiter.py"},
+      "weight": 0.1
+    },
+    {
+      "description": "Rate limit config file exists on feature branch",
+      "table": "files",
+      "check": "exists",
+      "params": {"branch_id": 2, "path": "config/rate_limits.yaml"},
+      "weight": 0.1
+    },
+    {
+      "description": "A PR exists from feature branch to main",
+      "table": "pull_requests",
+      "check": "exists",
+      "params": {"repo_id": 1, "source_branch_id": 2, "target_branch_id": 1},
+      "weight": 0.1
+    },
+    {
+      "description": "PR title mentions rate limiting",
+      "table": "pull_requests",
+      "check": "field_contains",
+      "params": {"id": 1, "field": "title", "substring": "rate limit"},
+      "weight": 0.05
+    },
+    {
+      "description": "PR is linked to issue #1",
+      "table": "pr_linked_issues",
+      "check": "exists",
+      "params": {"pr_id": 1, "issue_id": 1},
+      "weight": 0.1
+    },
+    {
+      "description": "Project board has at least 3 items",
+      "table": "project_items",
+      "check": "row_count_gte",
+      "params": {"threshold": 3, "where": {"project_id": 1}},
+      "weight": 0.1
+    }
+  ]
+}

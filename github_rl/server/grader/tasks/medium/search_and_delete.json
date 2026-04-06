@@ -1,0 +1,52 @@
+{
+  "task_id": "delete-leaked-credentials",
+  "difficulty": "medium",
+  "category": "secops",
+  "instructions": "An AWS access key was accidentally committed in config/secrets.py. Delete this file from the main branch and push the fix with commit message 'Remove leaked credentials'.",
+  "max_steps": 10,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n\n@app.route('/health')\ndef health():\n    return {'status': 'ok'}\n"},
+      {"id": 2, "branch_id": 1, "path": "config/settings.py", "content": "DEBUG = False\nDATABASE_URL = 'postgresql://localhost:5432/mydb'\nLOG_LEVEL = 'INFO'\n"},
+      {"id": 3, "branch_id": 1, "path": "config/secrets.py", "content": "AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE'\nAWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'\nSTRIPE_SECRET_KEY = 'sk_live_51ABC123DEF456'\n"},
+      {"id": 4, "branch_id": 1, "path": "config/__init__.py", "content": "from .settings import *\nfrom .secrets import *\n"},
+      {"id": 5, "branch_id": 1, "path": ".gitignore", "content": "*.pyc\n__pycache__/\n.env\nvenv/\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "security", "color": "e11d48"},
+      {"id": 2, "repo_id": 1, "name": "critical", "color": "b60205"}
+    ],
+    "issues": [],
+    "issue_labels": [],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "The file config/secrets.py no longer exists on the main branch",
+      "table": "files",
+      "check": "not_exists",
+      "params": {"branch_id": 1, "path": "config/secrets.py"},
+      "weight": 0.5
+    },
+    {
+      "description": "A commit exists with a message about removing leaked credentials",
+      "table": "commits",
+      "check": "field_contains",
+      "params": {"id": 1, "field": "message", "substring": "Remove leaked credentials"},
+      "weight": 0.5
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "task_id": "zero-day-incident-response",
+  "difficulty": "expert",
+  "category": "secops",
+  "instructions": "A zero-day remote code execution vulnerability (CVE-2025-9999) has been discovered in our XML parsing library used in src/parser.py. Execute the full incident response workflow:\n\n1. Create a security advisory issue titled 'CRITICAL: Zero-day RCE in XML parser (CVE-2025-9999)' with severity label 'critical' and label 'security'. Assign to alice (security lead).\n2. Create a project board called 'Incident: CVE-2025-9999' to track the response.\n3. Create 3 sub-issues: 'Patch XML parser to disable external entities' (assign to bob), 'Audit logs for exploitation attempts' (assign to charlie), 'Notify affected customers' (assign to alice). Add all to the project board.\n4. Create a hotfix branch 'hotfix/cve-2025-9999' from main.\n5. Push a patched version of src/parser.py to the hotfix branch that disables external entity processing.\n6. Open a PR from the hotfix branch to main titled 'Fix: Disable XXE in XML parser' linking to the advisory issue. Assign alice as reviewer.\n7. Add a comment to the advisory issue with the incident timeline.",
+  "max_steps": 40,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask, request\nfrom src.parser import parse_xml_input\n\napp = Flask(__name__)\n\n@app.route('/api/import', methods=['POST'])\ndef import_data():\n    xml_data = request.data\n    result = parse_xml_input(xml_data)\n    return {'imported': len(result)}\n"},
+      {"id": 2, "branch_id": 1, "path": "src/parser.py", "content": "import xml.etree.ElementTree as ET\n\ndef parse_xml_input(xml_string):\n    \"\"\"Parse XML input and return list of records.\"\"\"\n    root = ET.fromstring(xml_string)\n    records = []\n    for item in root.findall('.//record'):\n        records.append({\n            'id': item.get('id'),\n            'name': item.find('name').text,\n            'value': item.find('value').text\n        })\n    return records\n"},
+      {"id": 3, "branch_id": 1, "path": "src/auth.py", "content": "import jwt\nimport os\n\nSECRET = os.environ.get('JWT_SECRET', 'change-me')\n\ndef verify_token(token):\n    try:\n        return jwt.decode(token, SECRET, algorithms=['HS256'])\n    except jwt.InvalidTokenError:\n        return None\n"},
+      {"id": 4, "branch_id": 1, "path": "requirements.txt", "content": "flask==2.3.0\nPyJWT==2.8.0\nlxml==4.9.3\nrequests==2.31.0\n"},
+      {"id": 5, "branch_id": 1, "path": "tests/test_parser.py", "content": "from src.parser import parse_xml_input\n\ndef test_parse_basic():\n    xml = '<data><record id=\"1\"><name>test</name><value>123</value></record></data>'\n    result = parse_xml_input(xml)\n    assert len(result) == 1\n    assert result[0]['id'] == '1'\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"},
+      {"id": 2, "repo_id": 1, "name": "security", "color": "e11d48"},
+      {"id": 3, "repo_id": 1, "name": "critical", "color": "b60205"},
+      {"id": 4, "repo_id": 1, "name": "incident", "color": "ff0000"},
+      {"id": 5, "repo_id": 1, "name": "high", "color": "d93f0b"}
+    ],
+    "issues": [],
+    "issue_labels": [],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Security advisory issue exists with correct title",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"id": 1, "field": "title", "substring": "CVE-2025-9999"},
+      "weight": 0.1
+    },
+    {
+      "description": "Advisory issue has 'critical' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 1, "label_id": 3},
+      "weight": 0.05
+    },
+    {
+      "description": "Advisory issue has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 1, "label_id": 2},
+      "weight": 0.05
+    },
+    {
+      "description": "Project board 'Incident: CVE-2025-9999' exists",
+      "table": "projects",
+      "check": "exists",
+      "params": {"name": "Incident: CVE-2025-9999"},
+      "weight": 0.1
+    },
+    {
+      "description": "At least 3 sub-issues were created",
+      "table": "issues",
+      "check": "row_count_gte",
+      "params": {"threshold": 4, "where": {"repo_id": 1}},
+      "weight": 0.1
+    },
+    {
+      "description": "Project board has items added",
+      "table": "project_items",
+      "check": "row_count_gte",
+      "params": {"threshold": 3, "where": {"project_id": 1}},
+      "weight": 0.1
+    },
+    {
+      "description": "Hotfix branch 'hotfix/cve-2025-9999' exists",
+      "table": "branches",
+      "check": "exists",
+      "params": {"repo_id": 1, "name": "hotfix/cve-2025-9999"},
+      "weight": 0.1
+    },
+    {
+      "description": "Patched parser.py exists on hotfix branch with defusedxml or entity disabled",
+      "table": "files",
+      "check": "exists",
+      "params": {"branch_id": 2, "path": "src/parser.py"},
+      "weight": 0.1
+    },
+    {
+      "description": "A PR exists from hotfix branch to main",
+      "table": "pull_requests",
+      "check": "exists",
+      "params": {"repo_id": 1, "source_branch_id": 2, "target_branch_id": 1},
+      "weight": 0.1
+    },
+    {
+      "description": "PR is linked to the advisory issue",
+      "table": "pr_linked_issues",
+      "check": "exists",
+      "params": {"pr_id": 1, "issue_id": 1},
+      "weight": 0.1
+    },
+    {
+      "description": "Advisory issue has a comment with incident timeline",
+      "table": "issue_comments",
+      "check": "exists",
+      "params": {"issue_id": 1},
+      "weight": 0.1
+    }
+  ]
+}

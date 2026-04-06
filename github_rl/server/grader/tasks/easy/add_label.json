@@ -1,0 +1,53 @@
+{
+  "task_id": "add-label-and-assign",
+  "difficulty": "easy",
+  "category": "issues",
+  "instructions": "Add the label 'critical' to issue #3 which is a production outage. Also assign it to user 'alice' who is the on-call engineer.",
+  "max_steps": 10,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n\n@app.route('/health')\ndef health():\n    return {'status': 'ok'}\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"},
+      {"id": 2, "repo_id": 1, "name": "enhancement", "color": "a2eeef"},
+      {"id": 3, "repo_id": 1, "name": "critical", "color": "b60205"}
+    ],
+    "issues": [
+      {"id": 3, "repo_id": 1, "number": 3, "title": "Production database connection pool exhausted", "body": "All connections in the production DB pool are exhausted. Users are seeing 503 errors across all endpoints. This started at 14:32 UTC after the last deploy.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 3, "label_id": 1}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Issue #3 has the 'critical' label applied",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 3, "label_id": 3},
+      "weight": 0.5
+    },
+    {
+      "description": "Issue #3 is assigned to alice",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"id": 3, "field": "assignee", "value": "alice"},
+      "weight": 0.5
+    }
+  ]
+}

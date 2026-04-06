@@ -1,0 +1,73 @@
+{
+  "task_id": "create-security-audit-board",
+  "difficulty": "hard",
+  "category": "projects",
+  "instructions": "Create a project board called 'Q2 Security Audit'. Add issues #1, #2, and #3 to it. Move issue #1 to 'In Progress' and issue #2 to 'Done'.",
+  "max_steps": 15,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "security", "color": "e11d48"},
+      {"id": 2, "repo_id": 1, "name": "audit", "color": "5319e7"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Audit: Input validation on all API endpoints", "body": "Review all API endpoints for proper input validation and sanitization. Check for SQL injection, XSS, and command injection vectors.", "status": "open"},
+      {"id": 2, "repo_id": 1, "number": 2, "title": "Audit: Review authentication token expiry", "body": "Verify that all JWT tokens have appropriate expiry times. Current tokens may be long-lived. Check refresh token rotation policy.", "status": "open"},
+      {"id": 3, "repo_id": 1, "number": 3, "title": "Audit: Dependency vulnerability scan", "body": "Run a full dependency vulnerability scan using Snyk or Dependabot. Catalog all known CVEs in our dependency tree and prioritize remediation.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 1, "label_id": 1},
+      {"issue_id": 1, "label_id": 2},
+      {"issue_id": 2, "label_id": 1},
+      {"issue_id": 2, "label_id": 2},
+      {"issue_id": 3, "label_id": 1},
+      {"issue_id": 3, "label_id": 2}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "A project named 'Q2 Security Audit' exists",
+      "table": "projects",
+      "check": "exists",
+      "params": {"name": "Q2 Security Audit"},
+      "weight": 0.2
+    },
+    {
+      "description": "Three items are added to the project",
+      "table": "project_items",
+      "check": "count",
+      "params": {"expected": 3, "where": {"project_id": 1}},
+      "weight": 0.3
+    },
+    {
+      "description": "Issue #1 project item is in 'In Progress' column",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"id": 1, "field": "column", "value": "In Progress"},
+      "weight": 0.25
+    },
+    {
+      "description": "Issue #2 project item is in 'Done' column",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"id": 2, "field": "column", "value": "Done"},
+      "weight": 0.25
+    }
+  ]
+}
