@@ -1,6 +1,6 @@
 ---
-title: Github Rl Environment Server
-emoji: 🖨️
+title: GitHub RL Environment
+emoji: 🔧
 colorFrom: green
 colorTo: pink
 sdk: docker
@@ -11,245 +11,159 @@ tags:
   - openenv
 ---
 
-# Github Rl Environment
+# GitHub RL Environment
 
-A simple test environment that echoes back messages. Perfect for testing the env APIs as well as demonstrating environment usage patterns.
+A simulated GitHub environment for training RL agents on real-world repository operations. Agents interact with a sandboxed GitHub-like API to perform issue triage, incident response, project management, and pull request workflows.
 
-## Quick Start
+## Motivation
 
-The simplest way to use the Github Rl environment is through the `GithubRlEnv` class:
+DevOps and repository management tasks are a core part of software engineering, yet there are no standardized RL environments for training agents on these workflows. This environment fills that gap by providing a deterministic, graded simulation of GitHub operations with 10 tasks across 4 difficulty levels.
+
+## Action Space
+
+**GithubRlAction** - A single JSON-encoded tool call per step:
 
 ```python
-from github_rl import GithubRlAction, GithubRlEnv
-
-try:
-    # Create environment from Docker image
-    github_rlenv = GithubRlEnv.from_docker_image("github_rl-env:latest")
-
-    # Reset
-    result = github_rlenv.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-
-    # Send multiple messages
-    messages = ["Hello, World!", "Testing echo", "Final message"]
-
-    for msg in messages:
-        result = github_rlenv.step(GithubRlAction(message=msg))
-        print(f"Sent: '{msg}'")
-        print(f"  → Echoed: '{result.observation.echoed_message}'")
-        print(f"  → Length: {result.observation.message_length}")
-        print(f"  → Reward: {result.reward}")
-
-finally:
-    # Always clean up
-    github_rlenv.close()
+class GithubRlAction(Action):
+    message: str  # JSON tool call, e.g. {"tool": "issue_write", "args": {...}}
 ```
 
-That's it! The `GithubRlEnv.from_docker_image()` method handles:
-- Starting the Docker container
-- Waiting for the server to be ready
-- Connecting to the environment
-- Container cleanup when you call `close()`
+30 tools available: `issue_read`, `issue_write`, `list_issues`, `add_issue_comment`, `search_issues`, `sub_issue_write`, `pull_request_read`, `create_pull_request`, `update_pull_request`, `merge_pull_request`, `list_pull_requests`, `pull_request_review_write`, `add_reply_to_pull_request_comment`, `update_pull_request_branch`, `create_branch`, `list_branches`, `get_file_contents`, `create_or_update_file`, `delete_file`, `push_files`, `get_repository_tree`, `get_commits`, `projects_list`, `projects_get`, `projects_write`, `label_write`, `list_labels`, `get_label`, `search_code`, `search_pull_requests`.
 
-## Building the Docker Image
+## Observation Space
 
-Before using the environment, you need to build the Docker image:
+**GithubRlObservation** - Returned after each step:
 
-```bash
-# From project root
-docker build -t github_rl-env:latest -f server/Dockerfile .
+```python
+class GithubRlObservation(Observation):
+    result: str              # Tool execution result (JSON)
+    available_tools: list[str]  # Available tool names
+    task_instructions: str   # Current task description
+    task_progress: str       # e.g. "3/10 criteria met"
 ```
 
-## Deploying to Hugging Face Spaces
+## Tasks (10 total, 4 difficulty levels)
 
-You can easily deploy your OpenEnv environment to Hugging Face Spaces using the `openenv push` command:
+### Easy (3 tasks, max 5 steps)
+| Task ID | Description | Criteria |
+|---------|-------------|----------|
+| `close-resolved-issue` | Close a resolved issue | 1 criterion |
+| `create-bug-report` | Create an issue with specific title and body | 2 criteria |
+| `label-bug-issue` | Add correct label to an issue | 1 criterion |
+
+### Medium (3 tasks, max 10 steps)
+| Task ID | Description | Criteria |
+|---------|-------------|----------|
+| `triage-single-bug` | Label, assign, and comment on a bug | 4 criteria |
+| `close-with-resolution` | Close one issue with comment, update another | 4 criteria |
+| `hotfix-branch-and-pr` | Create branch, open PR, link to issue | 3 criteria |
+
+### Hard (2 tasks, max 30 steps)
+| Task ID | Description | Criteria |
+|---------|-------------|----------|
+| `triage-security-issues` | Read TEAM.md and SECURITY_POLICY.md, triage 5 security issues, skip 2 distractors, create summary | 24 criteria |
+| `create-security-audit-board` | Read AUDIT_PLAN.md, set up project board with 5 issues in correct columns, close completed items, create final report | 17 criteria |
+
+### Expert (2 tasks, max 40 steps)
+| Task ID | Description | Criteria |
+|---------|-------------|----------|
+| `zero-day-incident-response` | Read INCIDENT_PLAYBOOK.md, investigate code, full incident response with advisory, sub-tasks, hotfix branch, patched code, PR, timeline | 19 criteria |
+| `secure-feature-workflow` | Read CONTRIBUTING.md, full feature dev workflow with project board, sub-issues, feature branch, implementation, config, PR | 19 criteria |
+
+## Reward Design
+
+- Rewards are **weighted sums** of individual criteria scores, normalized to [0.0, 1.0]
+- Each criterion contributes partial credit independently
+- Progress is reported as "X/Y criteria met" after each step
+- Episode ends when all criteria are met (reward >= 0.9999) or max steps reached
+- No negative rewards; score monotonically increases unless the agent takes destructive actions (e.g., deleting project items)
+
+## Baseline Scores (Qwen2.5-7B-Instruct)
+
+| Difficulty | Expected Score Range |
+|------------|---------------------|
+| Easy | 0.8 - 1.0 |
+| Medium | 0.5 - 0.8 |
+| Hard | 0.1 - 0.4 |
+| Expert | 0.2 - 0.5 |
+
+## Setup
+
+### Docker (recommended)
 
 ```bash
-# From the environment directory (where openenv.yaml is located)
+docker build -t github_rl .
+docker run -d -p 8000:8000 github_rl
+```
+
+### Local development
+
+```bash
+uv sync
+uv run server
+```
+
+### Running inference
+
+```bash
+API_BASE_URL="https://router.huggingface.co/v1" \
+MODEL_NAME="Qwen/Qwen2.5-7B-Instruct" \
+HF_TOKEN="your-hf-token" \
+uv run inference.py
+```
+
+Select specific tasks:
+
+```bash
+TASK_ID=triage-security-issues HF_TOKEN=... uv run inference.py
+DIFFICULTY=hard HF_TOKEN=... uv run inference.py
+```
+
+### Deploying to Hugging Face Spaces
+
+```bash
 openenv push
-
-# Or specify options
-openenv push --namespace my-org --private
 ```
 
-The `openenv push` command will:
-1. Validate that the directory is an OpenEnv environment (checks for `openenv.yaml`)
-2. Prepare a custom build for Hugging Face Docker space (enables web interface)
-3. Upload to Hugging Face (ensuring you're logged in)
+## Environment Variables
 
-### Prerequisites
-
-- Authenticate with Hugging Face: The command will prompt for login if not already authenticated
-
-### Options
-
-- `--directory`, `-d`: Directory containing the OpenEnv environment (defaults to current directory)
-- `--repo-id`, `-r`: Repository ID in format 'username/repo-name' (defaults to 'username/env-name' from openenv.yaml)
-- `--base-image`, `-b`: Base Docker image to use (overrides Dockerfile FROM)
-- `--private`: Deploy the space as private (default: public)
-
-### Examples
-
-```bash
-# Push to your personal namespace (defaults to username/env-name from openenv.yaml)
-openenv push
-
-# Push to a specific repository
-openenv push --repo-id my-org/my-env
-
-# Push with a custom base image
-openenv push --base-image ghcr.io/meta-pytorch/openenv-base:latest
-
-# Push as a private space
-openenv push --private
-
-# Combine options
-openenv push --repo-id my-org/my-env --base-image custom-base:latest --private
-```
-
-After deployment, your space will be available at:
-`https://huggingface.co/spaces/<repo-id>`
-
-The deployed space includes:
-- **Web Interface** at `/web` - Interactive UI for exploring the environment
-- **API Documentation** at `/docs` - Full OpenAPI/Swagger interface
-- **Health Check** at `/health` - Container health monitoring
-- **WebSocket** at `/ws` - Persistent session endpoint for low-latency interactions
-
-## Environment Details
-
-### Action
-**GithubRlAction**: Contains a single field
-- `message` (str) - The message to echo back
-
-### Observation
-**GithubRlObservation**: Contains the echo response and metadata
-- `echoed_message` (str) - The message echoed back
-- `message_length` (int) - Length of the message
-- `reward` (float) - Reward based on message length (length × 0.1)
-- `done` (bool) - Always False for echo environment
-- `metadata` (dict) - Additional info like step count
-
-### Reward
-The reward is calculated as: `message_length × 0.1`
-- "Hi" → reward: 0.2
-- "Hello, World!" → reward: 1.3
-- Empty message → reward: 0.0
-
-## Advanced Usage
-
-### Connecting to an Existing Server
-
-If you already have a Github Rl environment server running, you can connect directly:
-
-```python
-from github_rl import GithubRlEnv
-
-# Connect to existing server
-github_rlenv = GithubRlEnv(base_url="<ENV_HTTP_URL_HERE>")
-
-# Use as normal
-result = github_rlenv.reset()
-result = github_rlenv.step(GithubRlAction(message="Hello!"))
-```
-
-Note: When connecting to an existing server, `github_rlenv.close()` will NOT stop the server.
-
-### Using the Context Manager
-
-The client supports context manager usage for automatic connection management:
-
-```python
-from github_rl import GithubRlAction, GithubRlEnv
-
-# Connect with context manager (auto-connects and closes)
-with GithubRlEnv(base_url="http://localhost:8000") as env:
-    result = env.reset()
-    print(f"Reset: {result.observation.echoed_message}")
-    # Multiple steps with low latency
-    for msg in ["Hello", "World", "!"]:
-        result = env.step(GithubRlAction(message=msg))
-        print(f"Echoed: {result.observation.echoed_message}")
-```
-
-The client uses WebSocket connections for:
-- **Lower latency**: No HTTP connection overhead per request
-- **Persistent session**: Server maintains your environment state
-- **Efficient for episodes**: Better for many sequential steps
-
-### Concurrent WebSocket Sessions
-
-The server supports multiple concurrent WebSocket connections. To enable this,
-modify `server/app.py` to use factory mode:
-
-```python
-# In server/app.py - use factory mode for concurrent sessions
-app = create_app(
-    GithubRlEnvironment,  # Pass class, not instance
-    GithubRlAction,
-    GithubRlObservation,
-    max_concurrent_envs=4,  # Allow 4 concurrent sessions
-)
-```
-
-Then multiple clients can connect simultaneously:
-
-```python
-from github_rl import GithubRlAction, GithubRlEnv
-from concurrent.futures import ThreadPoolExecutor
-
-def run_episode(client_id: int):
-    with GithubRlEnv(base_url="http://localhost:8000") as env:
-        result = env.reset()
-        for i in range(10):
-            result = env.step(GithubRlAction(message=f"Client {client_id}, step {i}"))
-        return client_id, result.observation.message_length
-
-# Run 4 episodes concurrently
-with ThreadPoolExecutor(max_workers=4) as executor:
-    results = list(executor.map(run_episode, range(4)))
-```
-
-## Development & Testing
-
-### Direct Environment Testing
-
-Test the environment logic directly without starting the HTTP server:
-
-```bash
-# From the server directory
-python3 server/github_rl_environment.py
-```
-
-This verifies that:
-- Environment resets correctly
-- Step executes actions properly
-- State tracking works
-- Rewards are calculated correctly
-
-### Running Locally
-
-Run the server locally for development:
-
-```bash
-uvicorn server.app:app --reload
-```
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `API_BASE_URL` | No | `https://router.huggingface.co/v1` | LLM API endpoint |
+| `MODEL_NAME` | No | `Qwen/Qwen2.5-7B-Instruct` | Model identifier |
+| `HF_TOKEN` | Yes | - | HuggingFace API token |
+| `LOCAL_IMAGE_NAME` | No | `github_rl` | Docker image name |
+| `TASK_ID` | No | - | Specific task to run |
+| `DIFFICULTY` | No | - | Filter tasks by difficulty |
 
 ## Project Structure
 
 ```
 github_rl/
-├── .dockerignore         # Docker build exclusions
-├── __init__.py            # Module exports
-├── README.md              # This file
-├── openenv.yaml           # OpenEnv manifest
-├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (generated)
-├── client.py              # GithubRlEnv client
-├── models.py              # Action and Observation models
+├── inference.py              # Baseline inference script
+├── openenv.yaml              # OpenEnv manifest
+├── pyproject.toml            # Dependencies
+├── Dockerfile                # Container definition
+├── models.py                 # GithubRlAction, GithubRlObservation
+├── client.py                 # GithubRlEnv client
+├── __init__.py               # Module exports
 └── server/
-    ├── __init__.py        # Server module exports
-    ├── github_rl_environment.py  # Core environment logic
-    ├── app.py             # FastAPI application (HTTP + WebSocket endpoints)
-    └── Dockerfile         # Container image definition
+    ├── app.py                # FastAPI application
+    ├── github_rl_environment.py  # Environment (reset/step/state)
+    ├── db.py                 # SQLite schema and seeding
+    ├── grader/
+    │   ├── grader.py         # Evaluation engine
+    │   └── tasks/            # 10 task definitions (JSON)
+    │       ├── easy/         # 3 tasks
+    │       ├── medium/       # 3 tasks
+    │       ├── hard/         # 2 tasks
+    │       └── expert/       # 2 tasks
+    └── mcp_tools/            # 24 GitHub API tool implementations
+        ├── issues.py
+        ├── pull_requests.py
+        ├── branches.py
+        ├── files.py
+        ├── projects.py
+        ├── labels.py
+        └── search.py
 ```

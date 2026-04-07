@@ -1,7 +1,8 @@
 spec_version: 1
 name: github_rl
+version: "1.0.0"
+description: "Simulated GitHub environment for training RL agents on real-world repository operations — issue triage, incident response, project management, and PR workflows."
 type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
-

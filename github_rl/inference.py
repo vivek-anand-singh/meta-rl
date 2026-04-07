@@ -48,10 +48,12 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Required environment variables
 # ---------------------------------------------------------------------------
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-7B-Instruct"
-HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or ""
-IMAGE_NAME = os.getenv("IMAGE_NAME") or os.getenv("LOCAL_IMAGE_NAME") or "github_rl"
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+# Optional — if you use from_docker_image():
+IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "github_rl")
 
 TASK_NAME = os.getenv("GITHUB_RL_TASK", "github-ops")
 TASK_ID = os.getenv("TASK_ID", "")          # e.g. "triage-security-issues"
@@ -78,7 +80,7 @@ SYSTEM_PROMPT = textwrap.dedent("""\
     - search_issues(owner, repo, query)
     - sub_issue_write(owner, repo, issue_number, sub_issue_number)
     - pull_request_read(owner, repo, pullNumber)
-    - create_pull_request(owner, repo, title, head, base, body)
+    - create_pull_request(owner, repo, title, head, base, body, assignee, linked_issues)
     - update_pull_request(owner, repo, pullNumber, title, body, state, assignee, linked_issues)
     - merge_pull_request(owner, repo, pullNumber, commit_title, merge_method)
     - list_pull_requests(owner, repo, state)
@@ -99,6 +101,8 @@ SYSTEM_PROMPT = textwrap.dedent("""\
     - get_label(owner, repo, name)
     - search_code(owner, repo, query)
     - search_pull_requests(owner, repo, query)
+    - add_reply_to_pull_request_comment(owner, repo, pullNumber, comment_id, body)
+    - update_pull_request_branch(owner, repo, pullNumber)
 
     ## Rules
     1. Respond with ONLY a JSON tool call. No explanations.
@@ -129,7 +133,7 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
 
