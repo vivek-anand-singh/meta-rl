@@ -2,7 +2,7 @@
   "task_id": "triage-security-issues",
   "difficulty": "hard",
   "category": "multi_step",
-  "instructions": "Triage these 5 open security issues. For each issue:\n- Read the issue carefully and assign the correct severity label (critical, high, medium, or low).\n- Assign to the correct team member: alice handles authentication issues, bob handles infrastructure/network issues, charlie handles application-level vulnerabilities.\n- Add a triage comment summarizing the risk and recommended next steps.\n\nIssues:\n#1 - Hardcoded admin password (assign to alice, critical)\n#2 - CORS misconfiguration allows any origin (assign to charlie, high)\n#3 - TLS 1.0 still enabled on staging (assign to bob, medium)\n#4 - Debug endpoints exposed in production (assign to charlie, high)\n#5 - SSH key rotation overdue by 6 months (assign to bob, low)",
+  "instructions": "There are 5 open security issues that need triage. For each one, read it carefully, assess the severity, and apply the appropriate severity label (critical, high, medium, or low) based on the actual risk described. Then assign each to the right team member based on their domain: alice owns authentication and access control, bob owns infrastructure and network security, and charlie owns application-level vulnerabilities. Add a triage comment to each issue summarizing the risk and recommending next steps.",
   "max_steps": 25,
   "seed": {
     "repos": [

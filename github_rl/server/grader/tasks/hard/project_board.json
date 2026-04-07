@@ -2,7 +2,7 @@
   "task_id": "create-security-audit-board",
   "difficulty": "hard",
   "category": "projects",
-  "instructions": "Create a project board called 'Q2 Security Audit'. Add issues #1, #2, and #3 to it. Move issue #1 to 'In Progress' and issue #2 to 'Done'.",
+  "instructions": "The security team needs a tracking board for their Q2 audit work. Set one up with an appropriate name, add all the audit-related issues to it, and update the board to reflect current progress -- the input validation audit is actively being worked on, and the token expiry review has already been completed.",
   "max_steps": 15,
   "seed": {
     "repos": [

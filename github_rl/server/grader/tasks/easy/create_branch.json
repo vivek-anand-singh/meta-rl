@@ -2,7 +2,7 @@
   "task_id": "create-hotfix-branch",
   "difficulty": "easy",
   "category": "code",
-  "instructions": "Create a new branch called 'hotfix/cve-2025-1234' from main for an urgent security patch.",
+  "instructions": "An urgent security vulnerability (CVE-2025-1234) needs a hotfix. Create a hotfix branch from main following the standard naming convention hotfix/<cve-id>.",
   "max_steps": 10,
   "seed": {
     "repos": [

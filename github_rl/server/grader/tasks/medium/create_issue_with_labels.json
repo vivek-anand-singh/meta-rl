@@ -2,7 +2,7 @@
   "task_id": "create-security-issue",
   "difficulty": "medium",
   "category": "secops",
-  "instructions": "A SQL injection vulnerability was found in the login endpoint. Create an issue titled 'SQL Injection in /api/login', label it 'security' and 'critical', and assign it to 'bob' from the security team.",
+  "instructions": "Review the source code in the repository and look at the login endpoint. There's a serious injection vulnerability in how it handles user input. File a security issue with an appropriate title referencing the specific vulnerability and affected endpoint, apply the relevant severity and category labels, and assign it to bob on the security team.",
   "max_steps": 10,
   "seed": {
     "repos": [

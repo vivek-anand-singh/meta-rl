@@ -2,7 +2,7 @@
   "task_id": "add-label-and-assign",
   "difficulty": "easy",
   "category": "issues",
-  "instructions": "Add the label 'critical' to issue #3 which is a production outage. Also assign it to user 'alice' who is the on-call engineer.",
+  "instructions": "There's a production outage being tracked in the repo. Find the issue describing it, mark it with the appropriate severity label, and assign it to the on-call engineer (alice).",
   "max_steps": 10,
   "seed": {
     "repos": [

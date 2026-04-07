@@ -2,7 +2,7 @@
   "task_id": "review-vulnerable-dependency-pr",
   "difficulty": "medium",
   "category": "prs",
-  "instructions": "Review PR #3 which updates a dependency. The PR introduces a known vulnerable version of lodash (4.17.20) that is affected by CVE-2021-23337 (command injection via template). Request changes and add a comment explaining the CVE risk.",
+  "instructions": "There's an open pull request that updates a dependency. Review it carefully -- check whether the version change is safe by comparing the old and new versions. The proposed version has a known CVE associated with it. Request changes on the PR and explain the specific CVE risk in your review.",
   "max_steps": 10,
   "seed": {
     "repos": [

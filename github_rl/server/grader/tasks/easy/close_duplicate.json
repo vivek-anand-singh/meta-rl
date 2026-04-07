@@ -2,7 +2,7 @@
   "task_id": "close-duplicate-issue",
   "difficulty": "easy",
   "category": "issues",
-  "instructions": "Close issue #5. It is a confirmed duplicate of issue #2. Add a comment explaining it is a duplicate before closing.",
+  "instructions": "Someone reported a bug that looks like it's already been filed. Review the open issues in the repo, identify which one is a duplicate of an earlier report, leave a comment explaining it's a duplicate, and close it.",
   "max_steps": 10,
   "seed": {
     "repos": [

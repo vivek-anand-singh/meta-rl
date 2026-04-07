@@ -66,8 +66,19 @@ class GithubRlEnvironment(Environment):
         )
 
         criteria = self.current_task.get("eval_criteria", [])
+
+        # Provide repo context so the agent knows valid owner/repo names
+        repos = self.conn.execute("SELECT name, description FROM repos").fetchall()
+        repo_lines = [f"  - owner=acme repo={r['name']} ({r['description']})" for r in repos]
+        repo_context = "\n".join(repo_lines)
+        reset_msg = (
+            "Environment reset. Available repositories:\n"
+            f"{repo_context}\n"
+            "Use owner='acme' and the repo name shown above in all tool calls."
+        )
+
         return GithubRlObservation(
-            result="Environment reset. Send JSON tool calls to interact with the GitHub simulation.",
+            result=reset_msg,
             available_tools=get_available_tools(),
             task_instructions=self.current_task.get("instructions", ""),
             task_progress=f"0/{len(criteria)} criteria met",

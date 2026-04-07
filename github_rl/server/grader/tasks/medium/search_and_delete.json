@@ -2,7 +2,7 @@
   "task_id": "delete-leaked-credentials",
   "difficulty": "medium",
   "category": "secops",
-  "instructions": "An AWS access key was accidentally committed in config/secrets.py. Delete this file from the main branch and push the fix with commit message 'Remove leaked credentials'.",
+  "instructions": "There's been a credential leak -- someone accidentally committed secrets to the repository. Search the codebase for any files containing hardcoded API keys or credentials, remove the offending file from the main branch, and commit the fix with an appropriate message about removing leaked credentials.",
   "max_steps": 10,
   "seed": {
     "repos": [

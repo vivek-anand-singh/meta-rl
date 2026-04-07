@@ -6,7 +6,10 @@ from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 from openenv.core.env_server.types import State
 
-from .models import GithubRlAction, GithubRlObservation
+try:
+    from .models import GithubRlAction, GithubRlObservation
+except (ImportError, ModuleNotFoundError):
+    from models import GithubRlAction, GithubRlObservation
 
 
 class GithubRlEnv(
