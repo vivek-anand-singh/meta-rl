@@ -1,0 +1,47 @@
+{
+  "task_id": "create-bug-report",
+  "difficulty": "easy",
+  "category": "issues",
+  "instructions": "Create a new issue in the 'backend' repo titled 'Fix database connection timeout' with body describing that the database connection pool times out after 30 seconds under heavy load.",
+  "max_steps": 5,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"}
+    ],
+    "issues": [],
+    "issue_labels": [],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Issue with 'database' or 'timeout' in title exists",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "title", "substring": "timeout"},
+      "weight": 0.5
+    },
+    {
+      "description": "Issue body mentions connection or timeout",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "body", "substring": "timeout"},
+      "weight": 0.5
+    }
+  ]
+}

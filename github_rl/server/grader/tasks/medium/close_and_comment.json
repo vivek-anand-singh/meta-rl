@@ -1,0 +1,67 @@
+{
+  "task_id": "close-with-resolution",
+  "difficulty": "medium",
+  "category": "issues",
+  "instructions": "Issue #1 ('Upgrade Python to 3.12') has been completed. Issue #2 ('Add retry logic to API client') is still in progress.\n\n1. Add a comment to issue #1 explaining that the Python upgrade to 3.12 has been deployed to production\n2. Close issue #1\n3. Add a comment to issue #2 with a status update that retry logic implementation is underway and will be ready by end of sprint",
+  "max_steps": 10,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "enhancement", "color": "a2eeef"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Upgrade Python to 3.12", "body": "We need to upgrade from Python 3.10 to 3.12 for performance improvements and new language features.", "status": "open"},
+      {"id": 2, "repo_id": 1, "number": 2, "title": "Add retry logic to API client", "body": "The API client should retry failed requests with exponential backoff. Currently, any transient network failure causes immediate errors to the user.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 1, "label_id": 1},
+      {"issue_id": 2, "label_id": 1}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Issue #1 has a resolution comment mentioning production or deployed",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 1}, "field": "body", "substring": "production"},
+      "weight": 0.25
+    },
+    {
+      "description": "Issue #1 is closed",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "status", "value": "closed"},
+      "weight": 0.30
+    },
+    {
+      "description": "Issue #2 has a status comment mentioning retry",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 2}, "field": "body", "substring": "retry"},
+      "weight": 0.25
+    },
+    {
+      "description": "Issue #2 is still open",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 2, "repo_id": 1}, "field": "status", "value": "open"},
+      "weight": 0.20
+    }
+  ]
+}

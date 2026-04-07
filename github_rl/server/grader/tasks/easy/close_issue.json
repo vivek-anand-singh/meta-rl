@@ -1,0 +1,44 @@
+{
+  "task_id": "close-resolved-issue",
+  "difficulty": "easy",
+  "category": "issues",
+  "instructions": "Issue #1 ('Fix login bug') has been resolved. Close the issue.",
+  "max_steps": 5,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Fix login bug", "body": "Login fails on mobile devices. This has been fixed in the latest deploy.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 1, "label_id": 1}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Issue #1 is closed",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "status", "value": "closed"},
+      "weight": 1.0
+    }
+  ]
+}

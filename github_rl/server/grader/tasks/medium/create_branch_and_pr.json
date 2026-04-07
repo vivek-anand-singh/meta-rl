@@ -1,0 +1,58 @@
+{
+  "task_id": "hotfix-branch-and-pr",
+  "difficulty": "medium",
+  "category": "pull_requests",
+  "instructions": "There's a bug reported in issue #1. Create a hotfix branch named 'hotfix/fix-login', then open a pull request from that branch to main with a title describing the login fix. Link the PR to issue #1.",
+  "max_steps": 10,
+  "seed": {
+    "repos": [
+      {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
+    ],
+    "branches": [
+      {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
+    ],
+    "files": [
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+    ],
+    "labels": [
+      {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"}
+    ],
+    "issues": [
+      {"id": 1, "repo_id": 1, "number": 1, "title": "Login fails on mobile", "body": "Users on mobile devices cannot log in. The auth token is not being stored correctly in the mobile session handler.", "status": "open"}
+    ],
+    "issue_labels": [
+      {"issue_id": 1, "label_id": 1}
+    ],
+    "issue_comments": [],
+    "pull_requests": [],
+    "pr_reviews": [],
+    "pr_comments": [],
+    "projects": [],
+    "project_items": [],
+    "commits": [],
+    "pr_linked_issues": []
+  },
+  "eval_criteria": [
+    {
+      "description": "Branch 'hotfix/fix-login' exists",
+      "table": "branches",
+      "check": "exists",
+      "params": {"repo_id": 1, "name": "hotfix/fix-login"},
+      "weight": 0.30
+    },
+    {
+      "description": "PR from hotfix/fix-login to main exists",
+      "table": "pull_requests",
+      "check": "exists",
+      "params": {"repo_id": 1, "head_branch": "hotfix/fix-login", "base_branch": "main"},
+      "weight": 0.35
+    },
+    {
+      "description": "PR is linked to issue #1",
+      "table": "pr_linked_issues",
+      "check": "exists",
+      "params": {"pr_id": 1, "issue_id": 1},
+      "weight": 0.35
+    }
+  ]
+}
