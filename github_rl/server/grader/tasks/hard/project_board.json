@@ -59,14 +59,14 @@
       "description": "Issue #1 project item is in 'In Progress' column",
       "table": "project_items",
       "check": "field_equals",
-      "params": {"id": 1, "field": "column", "value": "In Progress"},
+      "params": {"id": 1, "field": "column_name", "value": "In Progress"},
       "weight": 0.25
     },
     {
       "description": "Issue #2 project item is in 'Done' column",
       "table": "project_items",
       "check": "field_equals",
-      "params": {"id": 2, "field": "column", "value": "Done"},
+      "params": {"id": 2, "field": "column_name", "value": "Done"},
       "weight": 0.25
     }
   ]

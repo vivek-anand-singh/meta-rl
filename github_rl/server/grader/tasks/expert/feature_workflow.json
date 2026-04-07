@@ -102,7 +102,7 @@
       "description": "A PR exists from feature branch to main",
       "table": "pull_requests",
       "check": "exists",
-      "params": {"repo_id": 1, "source_branch_id": 2, "target_branch_id": 1},
+      "params": {"repo_id": 1, "head_branch": "feature/rate-limiting", "base_branch": "main"},
       "weight": 0.1
     },
     {

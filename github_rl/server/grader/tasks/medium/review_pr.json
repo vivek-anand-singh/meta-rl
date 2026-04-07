@@ -26,7 +26,7 @@
     "issue_labels": [],
     "issue_comments": [],
     "pull_requests": [
-      {"id": 3, "repo_id": 1, "number": 3, "title": "Update lodash to 4.17.20", "body": "Bumps lodash from 4.17.21 to 4.17.20 to match our pinned dependency matrix.", "status": "open", "source_branch_id": 2, "target_branch_id": 1, "author": "dependabot"}
+      {"id": 3, "repo_id": 1, "number": 3, "title": "Update lodash to 4.17.20", "body": "Bumps lodash from 4.17.21 to 4.17.20 to match our pinned dependency matrix.", "status": "open", "head_branch": "deps/update-lodash", "base_branch": "main", "author": "dependabot"}
     ],
     "pr_reviews": [],
     "pr_comments": [],
