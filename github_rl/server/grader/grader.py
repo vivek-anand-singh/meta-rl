@@ -69,30 +69,45 @@ def _check_exists(conn: sqlite3.Connection, table: str, params: dict) -> float:
 
 
 def _check_field_equals(conn: sqlite3.Connection, table: str, params: dict) -> float:
-    row_id = params.get("id")
+    where = params.get("where", {})
     field = params.get("field", "")
     value = params.get("value")
-    if row_id is None or not field:
+    # Backward compat: fall back to {"id": ...} if no "where" provided
+    if not where and "id" in params:
+        where = {"id": params["id"]}
+    if not where or not field:
         return 0.0
-    row = conn.execute(f"SELECT {field} FROM {table} WHERE id = ?", (row_id,)).fetchone()
-    if not row:
-        return 0.0
-    actual = row[0]
-    if isinstance(value, str):
-        return 1.0 if str(actual).lower() == value.lower() else 0.0
-    return 1.0 if actual == value else 0.0
+    where_clauses = [f"{k} = ?" for k in where]
+    where_values = list(where.values())
+    query = f"SELECT {field} FROM {table} WHERE {' AND '.join(where_clauses)}"
+    rows = conn.execute(query, where_values).fetchall()
+    for row in rows:
+        actual = row[0]
+        if isinstance(value, str):
+            if str(actual).lower() == value.lower():
+                return 1.0
+        elif actual == value:
+            return 1.0
+    return 0.0
 
 
 def _check_field_contains(conn: sqlite3.Connection, table: str, params: dict) -> float:
-    row_id = params.get("id")
+    where = params.get("where", {})
     field = params.get("field", "")
     substring = params.get("substring", "")
-    if row_id is None or not field:
+    # Backward compat: fall back to {"id": ...} if no "where" provided
+    if not where and "id" in params:
+        where = {"id": params["id"]}
+    if not where or not field:
         return 0.0
-    row = conn.execute(f"SELECT {field} FROM {table} WHERE id = ?", (row_id,)).fetchone()
-    if not row or not row[0]:
-        return 0.0
-    return 1.0 if substring.lower() in str(row[0]).lower() else 0.0
+    where_clauses = [f"{k} = ?" for k in where]
+    where_values = list(where.values())
+    query = f"SELECT {field} FROM {table} WHERE {' AND '.join(where_clauses)}"
+    rows = conn.execute(query, where_values).fetchall()
+    for row in rows:
+        if row[0] and substring.lower() in str(row[0]).lower():
+            return 1.0
+    return 0.0
 
 
 def _check_count(conn: sqlite3.Connection, table: str, params: dict) -> float:

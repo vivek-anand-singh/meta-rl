@@ -2,7 +2,7 @@
   "task_id": "secure-feature-workflow",
   "difficulty": "expert",
   "category": "multi_step",
-  "instructions": "There's an open feature request in the repo for a security hardening feature. Read it to understand the requirements, then execute the full feature development workflow:\n\n- Set up a project board to track the feature work, and add the feature request issue to it (mark it as in progress).\n- Break the work into sub-issues: one for implementing the core middleware and one for configuration and tests. Assign bob to the implementation and charlie to the config/tests. Label them appropriately based on what the feature is about.\n- Create a feature branch and implement the solution: the middleware code should live under src/middleware/ and the configuration under config/ (as a YAML file). Use the approach described in the feature request.\n- Open a PR from the feature branch to main, link it to the original feature request, and assign alice as reviewer. Add all sub-issues to the project board as well.",
+  "instructions": "There's an open feature request in the repo for a security hardening feature. Read the feature request issue and the team's CONTRIBUTING.md guide to understand the requirements and conventions, then execute the full feature development workflow:\n\n1. Set up project tracking and organize the work into sub-issues with appropriate assignments and labels.\n2. Create a feature branch, implement the solution, and open a PR back to main.\n3. Follow all conventions described in CONTRIBUTING.md.",
   "max_steps": 40,
   "seed": {
     "repos": [
@@ -17,7 +17,8 @@
       {"id": 3, "branch_id": 1, "path": "src/__init__.py", "content": ""},
       {"id": 4, "branch_id": 1, "path": "requirements.txt", "content": "flask==2.3.0\nPyJWT==2.8.0\nredis==5.0.0\ngunicorn==21.2.0\n"},
       {"id": 5, "branch_id": 1, "path": "config/settings.py", "content": "import os\n\nDEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'\nDATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost:5432/mydb')\nREDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')\nLOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')\n"},
-      {"id": 6, "branch_id": 1, "path": "tests/test_app.py", "content": "import pytest\nfrom src.app import app\n\n@pytest.fixture\ndef client():\n    app.config['TESTING'] = True\n    with app.test_client() as client:\n        yield client\n\ndef test_health(client):\n    rv = client.get('/health')\n    assert rv.status_code == 200\n\ndef test_unauthorized(client):\n    rv = client.get('/api/data')\n    assert rv.status_code == 401\n"}
+      {"id": 6, "branch_id": 1, "path": "tests/test_app.py", "content": "import pytest\nfrom src.app import app\n\n@pytest.fixture\ndef client():\n    app.config['TESTING'] = True\n    with app.test_client() as client:\n        yield client\n\ndef test_health(client):\n    rv = client.get('/health')\n    assert rv.status_code == 200\n\ndef test_unauthorized(client):\n    rv = client.get('/api/data')\n    assert rv.status_code == 401\n"},
+      {"id": 7, "branch_id": 1, "path": "CONTRIBUTING.md", "content": "# Contributing Guide\n\n## Project Tracking\n- Every feature must have a project board. Name it 'Feature: <short description>'.\n- The parent feature request issue should be added to the board and marked 'In Progress'.\n- Break work into sub-issues: one for core implementation (assign to bob), one for config and tests (assign to charlie).\n- All sub-issues must be added to the project board.\n- Label sub-issues with both 'enhancement' and 'security' if the feature is security-related.\n\n## Branch Conventions\n- Feature branches: 'feature/<kebab-case-name>' (e.g., 'feature/rate-limiting')\n- Always branch from main.\n\n## Implementation Standards\n- Middleware goes in src/middleware/ as Python files (.py)\n- Configuration files go in config/ as YAML (.yaml)\n- All implementations must include actual functional logic, not stubs.\n\n## Pull Requests\n- PR title should describe the feature clearly.\n- Always link the PR to the parent feature request issue.\n- Assign the security lead (alice) as reviewer for security features.\n"}
     ],
     "labels": [
       {"id": 1, "repo_id": 1, "name": "enhancement", "color": "a2eeef"},
@@ -43,88 +44,137 @@
   },
   "eval_criteria": [
     {
-      "description": "Project board 'Feature: API Rate Limiting' exists",
+      "description": "Project board with 'Rate Limiting' in name exists",
       "table": "projects",
-      "check": "exists",
-      "params": {"name": "Feature: API Rate Limiting"},
-      "weight": 0.1
+      "check": "field_contains",
+      "params": {"where": {"repo_id": 1}, "field": "name", "substring": "Rate Limiting"},
+      "weight": 0.06
     },
     {
-      "description": "Issue #1 is added to the project board",
+      "description": "Issue #1 added to project board",
       "table": "project_items",
       "check": "exists",
       "params": {"project_id": 1, "issue_id": 1},
-      "weight": 0.05
+      "weight": 0.04
     },
     {
-      "description": "At least 2 sub-issues were created",
+      "description": "Issue #1 marked In Progress on board",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"where": {"issue_id": 1}, "field": "column_name", "value": "In Progress"},
+      "weight": 0.06
+    },
+    {
+      "description": "At least 2 sub-issues created",
       "table": "issues",
       "check": "row_count_gte",
       "params": {"threshold": 3, "where": {"repo_id": 1}},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "Sub-issues have 'security' label applied",
+      "description": "Implementation sub-issue assigned to bob",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 2, "repo_id": 1}, "field": "assignee", "value": "bob"},
+      "weight": 0.05
+    },
+    {
+      "description": "Config/tests sub-issue assigned to charlie",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 3, "repo_id": 1}, "field": "assignee", "value": "charlie"},
+      "weight": 0.05
+    },
+    {
+      "description": "Sub-issue has 'security' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 2, "label_id": 2},
-      "weight": 0.05
+      "weight": 0.03
     },
     {
-      "description": "Sub-issues have 'enhancement' label applied",
+      "description": "Sub-issue has 'enhancement' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 2, "label_id": 1},
-      "weight": 0.05
+      "weight": 0.03
+    },
+    {
+      "description": "All sub-issues added to board (3+ items)",
+      "table": "project_items",
+      "check": "row_count_gte",
+      "params": {"threshold": 3, "where": {"project_id": 1}},
+      "weight": 0.06
     },
     {
       "description": "Feature branch 'feature/rate-limiting' exists",
       "table": "branches",
       "check": "exists",
       "params": {"repo_id": 1, "name": "feature/rate-limiting"},
-      "weight": 0.1
+      "weight": 0.08
     },
     {
-      "description": "Rate limiter implementation file exists on feature branch",
+      "description": "Rate limiter Python file at src/middleware/rate_limiter.py",
       "table": "files",
       "check": "exists",
       "params": {"branch_id": 2, "path": "src/middleware/rate_limiter.py"},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "Rate limit config file exists on feature branch",
+      "description": "Rate limiter has functional logic (not a stub)",
+      "table": "files",
+      "check": "field_contains",
+      "params": {"where": {"branch_id": 2, "path": "src/middleware/rate_limiter.py"}, "field": "content", "substring": "def "},
+      "weight": 0.04
+    },
+    {
+      "description": "Rate limiter mentions token bucket or rate limiting",
+      "table": "files",
+      "check": "field_contains",
+      "params": {"where": {"branch_id": 2, "path": "src/middleware/rate_limiter.py"}, "field": "content", "substring": "rate"},
+      "weight": 0.04
+    },
+    {
+      "description": "Config YAML at config/rate_limits.yaml",
       "table": "files",
       "check": "exists",
       "params": {"branch_id": 2, "path": "config/rate_limits.yaml"},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "A PR exists from feature branch to main",
+      "description": "Config has endpoint limits",
+      "table": "files",
+      "check": "field_contains",
+      "params": {"where": {"branch_id": 2, "path": "config/rate_limits.yaml"}, "field": "content", "substring": "limit"},
+      "weight": 0.04
+    },
+    {
+      "description": "PR from feature branch to main",
       "table": "pull_requests",
       "check": "exists",
       "params": {"repo_id": 1, "head_branch": "feature/rate-limiting", "base_branch": "main"},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
       "description": "PR title mentions rate limiting",
       "table": "pull_requests",
       "check": "field_contains",
-      "params": {"id": 1, "field": "title", "substring": "rate limit"},
+      "params": {"where": {"repo_id": 1, "head_branch": "feature/rate-limiting"}, "field": "title", "substring": "rate limit"},
+      "weight": 0.04
+    },
+    {
+      "description": "PR assigned to alice",
+      "table": "pull_requests",
+      "check": "field_equals",
+      "params": {"where": {"repo_id": 1, "head_branch": "feature/rate-limiting"}, "field": "assignee", "value": "alice"},
       "weight": 0.05
     },
     {
-      "description": "PR is linked to issue #1",
+      "description": "PR linked to issue #1",
       "table": "pr_linked_issues",
       "check": "exists",
       "params": {"pr_id": 1, "issue_id": 1},
-      "weight": 0.1
-    },
-    {
-      "description": "Project board has at least 3 items",
-      "table": "project_items",
-      "check": "row_count_gte",
-      "params": {"threshold": 3, "where": {"project_id": 1}},
-      "weight": 0.1
+      "weight": 0.06
     }
   ]
 }

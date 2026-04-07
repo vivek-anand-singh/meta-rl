@@ -2,8 +2,8 @@
   "task_id": "create-security-audit-board",
   "difficulty": "hard",
   "category": "projects",
-  "instructions": "The security team needs a tracking board for their Q2 audit work. Set one up with an appropriate name, add all the audit-related issues to it, and update the board to reflect current progress -- the input validation audit is actively being worked on, and the token expiry review has already been completed.",
-  "max_steps": 15,
+  "instructions": "The security team needs a tracking board for their Q2 audit work. Read the audit plan document (docs/AUDIT_PLAN.md) in the repo to understand the current status of each audit task, then:\n\n1. Create a project board named 'Q2 Security Audit' with a description summarizing the audit scope.\n2. Add ALL audit-related issues to the board.\n3. Set each item's column based on the status described in AUDIT_PLAN.md:\n   - Items not yet started go in 'Todo'\n   - Items actively being worked on go in 'In Progress'\n   - Completed items go in 'Done'\n4. For any completed audit items, also close the corresponding issue.\n5. Add a comment to each issue summarizing the audit finding or status from the plan document.\n6. Create a new issue titled 'Q2 Audit: Final Report' assigned to alice to track the final write-up, label it with 'audit', and add it to the board in 'Todo'.",
+  "max_steps": 30,
   "seed": {
     "repos": [
       {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
@@ -12,16 +12,20 @@
       {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
     ],
     "files": [
-      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"},
+      {"id": 2, "branch_id": 1, "path": "docs/AUDIT_PLAN.md", "content": "# Q2 Security Audit Plan\n\nScope: Backend API service security review covering input validation, authentication, dependencies, API security, and secrets management.\n\n## Task Status\n\n1. **Input validation audit** (Issue #1) - IN PROGRESS: Alice has started reviewing all API endpoints. Found several endpoints missing input sanitization. Work ongoing.\n\n2. **Token expiry review** (Issue #2) - DONE: Bob completed the review. JWT tokens now have 1-hour expiry with proper refresh rotation. All findings addressed.\n\n3. **Dependency vulnerability scan** (Issue #3) - TODO: Not yet started. Need to run Snyk scan and catalog all CVEs in dependency tree.\n\n4. **API rate limiting assessment** (Issue #4) - IN PROGRESS: Charlie is evaluating current rate limiting gaps. Several public endpoints have no limits.\n\n5. **Secrets management review** (Issue #5) - DONE: Alice completed the review. All hardcoded secrets have been moved to environment variables. Vault integration verified.\n"}
     ],
     "labels": [
       {"id": 1, "repo_id": 1, "name": "security", "color": "e11d48"},
-      {"id": 2, "repo_id": 1, "name": "audit", "color": "5319e7"}
+      {"id": 2, "repo_id": 1, "name": "audit", "color": "5319e7"},
+      {"id": 3, "repo_id": 1, "name": "bug", "color": "d73a4a"}
     ],
     "issues": [
       {"id": 1, "repo_id": 1, "number": 1, "title": "Audit: Input validation on all API endpoints", "body": "Review all API endpoints for proper input validation and sanitization. Check for SQL injection, XSS, and command injection vectors.", "status": "open"},
       {"id": 2, "repo_id": 1, "number": 2, "title": "Audit: Review authentication token expiry", "body": "Verify that all JWT tokens have appropriate expiry times. Current tokens may be long-lived. Check refresh token rotation policy.", "status": "open"},
-      {"id": 3, "repo_id": 1, "number": 3, "title": "Audit: Dependency vulnerability scan", "body": "Run a full dependency vulnerability scan using Snyk or Dependabot. Catalog all known CVEs in our dependency tree and prioritize remediation.", "status": "open"}
+      {"id": 3, "repo_id": 1, "number": 3, "title": "Audit: Dependency vulnerability scan", "body": "Run a full dependency vulnerability scan using Snyk or Dependabot. Catalog all known CVEs in our dependency tree and prioritize remediation.", "status": "open"},
+      {"id": 4, "repo_id": 1, "number": 4, "title": "Audit: API rate limiting assessment", "body": "Assess current rate limiting on all public-facing API endpoints. Identify endpoints without rate limits and recommend configurations.", "status": "open"},
+      {"id": 5, "repo_id": 1, "number": 5, "title": "Audit: Secrets management review", "body": "Review all configuration files and code for hardcoded secrets. Verify Vault integration is working correctly for all services.", "status": "open"}
     ],
     "issue_labels": [
       {"issue_id": 1, "label_id": 1},
@@ -29,7 +33,11 @@
       {"issue_id": 2, "label_id": 1},
       {"issue_id": 2, "label_id": 2},
       {"issue_id": 3, "label_id": 1},
-      {"issue_id": 3, "label_id": 2}
+      {"issue_id": 3, "label_id": 2},
+      {"issue_id": 4, "label_id": 1},
+      {"issue_id": 4, "label_id": 2},
+      {"issue_id": 5, "label_id": 1},
+      {"issue_id": 5, "label_id": 2}
     ],
     "issue_comments": [],
     "pull_requests": [],
@@ -42,32 +50,123 @@
   },
   "eval_criteria": [
     {
-      "description": "A project named 'Q2 Security Audit' exists",
+      "description": "Project 'Q2 Security Audit' exists",
       "table": "projects",
       "check": "exists",
       "params": {"name": "Q2 Security Audit"},
-      "weight": 0.2
+      "weight": 0.08
     },
     {
-      "description": "Three items are added to the project",
+      "description": "All 5 audit issues added to the board",
       "table": "project_items",
-      "check": "count",
-      "params": {"expected": 3, "where": {"project_id": 1}},
-      "weight": 0.3
+      "check": "row_count_gte",
+      "params": {"threshold": 5, "where": {"project_id": 1}},
+      "weight": 0.08
     },
     {
-      "description": "Issue #1 project item is in 'In Progress' column",
-      "table": "project_items",
-      "check": "field_equals",
-      "params": {"id": 1, "field": "column_name", "value": "In Progress"},
-      "weight": 0.25
-    },
-    {
-      "description": "Issue #2 project item is in 'Done' column",
+      "description": "Issue #1 (input validation) is In Progress",
       "table": "project_items",
       "check": "field_equals",
-      "params": {"id": 2, "field": "column_name", "value": "Done"},
-      "weight": 0.25
+      "params": {"where": {"issue_id": 1}, "field": "column_name", "value": "In Progress"},
+      "weight": 0.08
+    },
+    {
+      "description": "Issue #2 (token expiry) is in Done",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"where": {"issue_id": 2}, "field": "column_name", "value": "Done"},
+      "weight": 0.08
+    },
+    {
+      "description": "Issue #3 (dependency scan) is in Todo",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"where": {"issue_id": 3}, "field": "column_name", "value": "Todo"},
+      "weight": 0.08
+    },
+    {
+      "description": "Issue #4 (rate limiting) is In Progress",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"where": {"issue_id": 4}, "field": "column_name", "value": "In Progress"},
+      "weight": 0.08
+    },
+    {
+      "description": "Issue #5 (secrets) is in Done",
+      "table": "project_items",
+      "check": "field_equals",
+      "params": {"where": {"issue_id": 5}, "field": "column_name", "value": "Done"},
+      "weight": 0.08
+    },
+    {
+      "description": "Issue #2 (completed token review) is closed",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 2, "repo_id": 1}, "field": "status", "value": "closed"},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #5 (completed secrets review) is closed",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 5, "repo_id": 1}, "field": "status", "value": "closed"},
+      "weight": 0.06
+    },
+    {
+      "description": "Issue #1 has an audit status comment mentioning validation",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 1}, "field": "body", "substring": "validation"},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #2 has an audit status comment mentioning token or expiry",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 2}, "field": "body", "substring": "token"},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #3 has an audit status comment mentioning dependency or scan",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 3}, "field": "body", "substring": "scan"},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #4 has an audit status comment mentioning rate limit",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 4}, "field": "body", "substring": "rate"},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #5 has an audit status comment mentioning secrets",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 5}, "field": "body", "substring": "secret"},
+      "weight": 0.04
+    },
+    {
+      "description": "Final report issue created with correct title",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"number": 6, "repo_id": 1}, "field": "title", "substring": "Final Report"},
+      "weight": 0.04
+    },
+    {
+      "description": "Final report issue assigned to alice",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 6, "repo_id": 1}, "field": "assignee", "value": "alice"},
+      "weight": 0.04
+    },
+    {
+      "description": "Final report issue added to project board",
+      "table": "project_items",
+      "check": "exists",
+      "params": {"issue_id": 6, "project_id": 1},
+      "weight": 0.04
     }
   ]
 }

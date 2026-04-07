@@ -2,7 +2,7 @@
   "task_id": "zero-day-incident-response",
   "difficulty": "expert",
   "category": "secops",
-  "instructions": "A zero-day RCE vulnerability (CVE-2025-9999) has been discovered in one of our parsing libraries. Investigate the codebase to identify the vulnerable code, then execute a full incident response:\n\n- File a security advisory issue that references the CVE, apply appropriate severity and category labels, and assign it to the security lead (alice).\n- Create an incident tracking board for this CVE and use it to organize the response.\n- Break the response into sub-tasks: patching the vulnerable code (bob), auditing logs for exploitation (charlie), and customer notification (alice). Track all of these on the incident board.\n- Create a hotfix branch following the hotfix/<cve-id> convention, patch the vulnerable file to eliminate the attack vector, and open a PR back to main linked to the advisory. Assign alice to review.\n- Document the incident timeline as a comment on the advisory issue.",
+  "instructions": "A zero-day RCE vulnerability (CVE-2025-9999) has been reported affecting one of the libraries used in this repository. Your job is to investigate and execute a complete incident response.\n\nYou must:\n1. Investigate the codebase to identify which file contains the vulnerable code and what the attack vector is.\n2. File a security advisory issue, triage it with appropriate labels and assignment to the security lead.\n3. Set up an incident tracking board and organize the response into sub-tasks covering: code remediation, log auditing for signs of exploitation, and customer communication. Assign each to the appropriate team member (alice handles security leadership and customer comms, bob handles code fixes, charlie handles log auditing).\n4. Create a hotfix branch, fix the vulnerable code, and open a PR back to main linked to the advisory.\n5. Document the incident timeline on the advisory issue.\n\nRead the INCIDENT_PLAYBOOK.md file for the team's incident response procedures before taking action.",
   "max_steps": 40,
   "seed": {
     "repos": [
@@ -15,8 +15,11 @@
       {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask, request\nfrom src.parser import parse_xml_input\n\napp = Flask(__name__)\n\n@app.route('/api/import', methods=['POST'])\ndef import_data():\n    xml_data = request.data\n    result = parse_xml_input(xml_data)\n    return {'imported': len(result)}\n"},
       {"id": 2, "branch_id": 1, "path": "src/parser.py", "content": "import xml.etree.ElementTree as ET\n\ndef parse_xml_input(xml_string):\n    \"\"\"Parse XML input and return list of records.\"\"\"\n    root = ET.fromstring(xml_string)\n    records = []\n    for item in root.findall('.//record'):\n        records.append({\n            'id': item.get('id'),\n            'name': item.find('name').text,\n            'value': item.find('value').text\n        })\n    return records\n"},
       {"id": 3, "branch_id": 1, "path": "src/auth.py", "content": "import jwt\nimport os\n\nSECRET = os.environ.get('JWT_SECRET', 'change-me')\n\ndef verify_token(token):\n    try:\n        return jwt.decode(token, SECRET, algorithms=['HS256'])\n    except jwt.InvalidTokenError:\n        return None\n"},
-      {"id": 4, "branch_id": 1, "path": "requirements.txt", "content": "flask==2.3.0\nPyJWT==2.8.0\nlxml==4.9.3\nrequests==2.31.0\n"},
-      {"id": 5, "branch_id": 1, "path": "tests/test_parser.py", "content": "from src.parser import parse_xml_input\n\ndef test_parse_basic():\n    xml = '<data><record id=\"1\"><name>test</name><value>123</value></record></data>'\n    result = parse_xml_input(xml)\n    assert len(result) == 1\n    assert result[0]['id'] == '1'\n"}
+      {"id": 4, "branch_id": 1, "path": "src/utils.py", "content": "import json\nimport hashlib\n\ndef safe_json_parse(data):\n    try:\n        return json.loads(data)\n    except json.JSONDecodeError:\n        return None\n\ndef hash_password(password):\n    return hashlib.sha256(password.encode()).hexdigest()\n"},
+      {"id": 5, "branch_id": 1, "path": "requirements.txt", "content": "flask==2.3.0\nPyJWT==2.8.0\nlxml==4.9.3\nrequests==2.31.0\npyyaml==6.0.1\n"},
+      {"id": 6, "branch_id": 1, "path": "tests/test_parser.py", "content": "from src.parser import parse_xml_input\n\ndef test_parse_basic():\n    xml = '<data><record id=\"1\"><name>test</name><value>123</value></record></data>'\n    result = parse_xml_input(xml)\n    assert len(result) == 1\n    assert result[0]['id'] == '1'\n"},
+      {"id": 7, "branch_id": 1, "path": "INCIDENT_PLAYBOOK.md", "content": "# Incident Response Playbook\n\n## Naming Conventions\n- Advisory issues: include the CVE ID in the title\n- Incident boards: name as 'Incident: <CVE-ID>'\n- Hotfix branches: use 'hotfix/<cve-id-lowercase>' format\n\n## Severity Labels\n- RCE vulnerabilities are always 'critical'\n- All security issues must also have the 'security' label\n\n## Response Roles\n- Security lead (alice): owns the advisory, handles customer notification\n- Code remediation (bob): patches the vulnerable code\n- Log auditing (charlie): checks for signs of exploitation\n\n## Sub-task Tracking\n- All sub-tasks must be added to the incident board\n- Each sub-task should reference the parent advisory\n\n## Code Fixes\n- For XML parsing vulnerabilities, replace xml.etree with defusedxml\n- Always create a hotfix branch and PR, never commit directly to main\n- Link the PR to the advisory issue\n\n## Documentation\n- Add an incident timeline comment to the advisory issue covering: discovery, triage, remediation steps, and current status\n"},
+      {"id": 8, "branch_id": 1, "path": "config/settings.py", "content": "DEBUG = False\nDATABASE_URL = 'postgresql://localhost:5432/mydb'\nLOG_LEVEL = 'INFO'\n"}
     ],
     "labels": [
       {"id": 1, "repo_id": 1, "name": "bug", "color": "d73a4a"},
@@ -38,81 +41,137 @@
   },
   "eval_criteria": [
     {
-      "description": "Security advisory issue exists with correct title",
+      "description": "Advisory issue mentions CVE-2025-9999",
       "table": "issues",
       "check": "field_contains",
-      "params": {"id": 1, "field": "title", "substring": "CVE-2025-9999"},
-      "weight": 0.1
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "title", "substring": "CVE-2025-9999"},
+      "weight": 0.06
     },
     {
-      "description": "Advisory issue has 'critical' label",
+      "description": "Advisory issue body mentions the vulnerable file or attack vector",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "body", "substring": "parser"},
+      "weight": 0.06
+    },
+    {
+      "description": "Advisory issue assigned to alice",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "assignee", "value": "alice"},
+      "weight": 0.05
+    },
+    {
+      "description": "Advisory has 'critical' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 1, "label_id": 3},
-      "weight": 0.05
+      "weight": 0.04
     },
     {
-      "description": "Advisory issue has 'security' label",
+      "description": "Advisory has 'security' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 1, "label_id": 2},
-      "weight": 0.05
+      "weight": 0.04
     },
     {
-      "description": "Project board 'Incident: CVE-2025-9999' exists",
+      "description": "Incident board with CVE in name exists",
       "table": "projects",
-      "check": "exists",
-      "params": {"name": "Incident: CVE-2025-9999"},
-      "weight": 0.1
+      "check": "field_contains",
+      "params": {"where": {"repo_id": 1}, "field": "name", "substring": "CVE-2025-9999"},
+      "weight": 0.06
     },
     {
-      "description": "At least 3 sub-issues were created",
+      "description": "At least 3 sub-issues created (advisory + 3 tasks = 4 total)",
       "table": "issues",
       "check": "row_count_gte",
       "params": {"threshold": 4, "where": {"repo_id": 1}},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "Project board has items added",
+      "description": "A sub-issue is assigned to bob (code remediation)",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"repo_id": 1, "assignee": "bob"}, "field": "assignee", "value": "bob"},
+      "weight": 0.04
+    },
+    {
+      "description": "A sub-issue is assigned to charlie (log auditing)",
+      "table": "issues",
+      "check": "field_equals",
+      "params": {"where": {"repo_id": 1, "assignee": "charlie"}, "field": "assignee", "value": "charlie"},
+      "weight": 0.04
+    },
+    {
+      "description": "Incident board has 3+ items",
       "table": "project_items",
       "check": "row_count_gte",
       "params": {"threshold": 3, "where": {"project_id": 1}},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "Hotfix branch 'hotfix/cve-2025-9999' exists",
+      "description": "Hotfix branch exists with cve-2025-9999 in name",
       "table": "branches",
       "check": "exists",
       "params": {"repo_id": 1, "name": "hotfix/cve-2025-9999"},
-      "weight": 0.1
+      "weight": 0.08
     },
     {
-      "description": "Patched parser.py exists on hotfix branch with defusedxml or entity disabled",
+      "description": "Patched parser.py exists on hotfix branch",
       "table": "files",
       "check": "exists",
       "params": {"branch_id": 2, "path": "src/parser.py"},
-      "weight": 0.1
+      "weight": 0.04
     },
     {
-      "description": "A PR exists from hotfix branch to main",
+      "description": "Patched file uses defusedxml",
+      "table": "files",
+      "check": "field_contains",
+      "params": {"where": {"branch_id": 2, "path": "src/parser.py"}, "field": "content", "substring": "defused"},
+      "weight": 0.08
+    },
+    {
+      "description": "Patched file no longer imports xml.etree directly",
+      "table": "files",
+      "check": "field_contains",
+      "params": {"where": {"branch_id": 2, "path": "src/parser.py"}, "field": "content", "substring": "defusedxml.ElementTree"},
+      "weight": 0.04
+    },
+    {
+      "description": "PR exists from hotfix to main",
       "table": "pull_requests",
       "check": "exists",
       "params": {"repo_id": 1, "head_branch": "hotfix/cve-2025-9999", "base_branch": "main"},
-      "weight": 0.1
+      "weight": 0.08
     },
     {
-      "description": "PR is linked to the advisory issue",
+      "description": "PR is linked to advisory issue",
       "table": "pr_linked_issues",
       "check": "exists",
       "params": {"pr_id": 1, "issue_id": 1},
-      "weight": 0.1
+      "weight": 0.06
     },
     {
-      "description": "Advisory issue has a comment with incident timeline",
+      "description": "Timeline comment exists on advisory",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 1},
-      "weight": 0.1
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 1}, "field": "body", "substring": "timeline"},
+      "weight": 0.05
+    },
+    {
+      "description": "Timeline comment mentions remediation",
+      "table": "issue_comments",
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 1}, "field": "body", "substring": "hotfix"},
+      "weight": 0.05
+    },
+    {
+      "description": "Advisory body mentions xml or RCE as attack vector",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "body", "substring": "xml"},
+      "weight": 0.05
     }
   ]
 }

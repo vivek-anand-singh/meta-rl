@@ -14,11 +14,11 @@ except (ImportError, ModuleNotFoundError):
     from models import GithubRlAction, GithubRlObservation
 
 try:
-    from .db import create_tables, seed_database, reset_database
+    from .db import create_tables, seed_database, reset_database, get_db_snapshot
     from .mcp_tools import dispatch_tool, get_available_tools
     from .grader import grade_task, load_task
 except (ImportError, ModuleNotFoundError):
-    from server.db import create_tables, seed_database, reset_database
+    from server.db import create_tables, seed_database, reset_database, get_db_snapshot
     from server.mcp_tools import dispatch_tool, get_available_tools
     from server.grader import grade_task, load_task
 
@@ -138,6 +138,8 @@ class GithubRlEnvironment(Environment):
 
     @property
     def state(self) -> State:
+        if self.conn:
+            self._state.db_snapshot = get_db_snapshot(self.conn)
         return self._state
 
     def close(self) -> None:

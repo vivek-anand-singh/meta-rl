@@ -30,16 +30,28 @@ def pull_request_read(conn, owner="", repo="", pullNumber=None, **kw):
 
 @register_tool("create_pull_request")
 def create_pull_request(conn, owner="", repo="", title="", head="", base="main",
-                        body=None, draft=False, **kw):
+                        body=None, draft=False, assignee=None, assignees=None,
+                        linked_issues=None, **kw):
     repo_id = resolve_repo(conn, owner, repo)
     resolve_branch(conn, repo_id, head)
     num = get_next_number(conn, "pull_requests", repo_id)
+    assignee_val = assignee or (assignees[0] if assignees else None)
     conn.execute(
-        "INSERT INTO pull_requests (repo_id, number, title, body, head_branch, base_branch, author) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (repo_id, num, title, body or "", head, base, "agent"),
+        "INSERT INTO pull_requests (repo_id, number, title, body, head_branch, base_branch, author, assignee) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (repo_id, num, title, body or "", head, base, "agent", assignee_val),
     )
     conn.commit()
     pr_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    if linked_issues:
+        for issue_num in linked_issues:
+            issue = conn.execute(
+                "SELECT id FROM issues WHERE repo_id = ? AND number = ?", (repo_id, issue_num)
+            ).fetchone()
+            if issue:
+                conn.execute("INSERT OR IGNORE INTO pr_linked_issues VALUES (?, ?)", (pr_id, issue["id"]))
+        conn.commit()
+
     return json.dumps({"id": pr_id, "number": num, "url": f"/{owner}/{repo}/pull/{num}"})
 
 

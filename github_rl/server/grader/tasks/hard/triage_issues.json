@@ -2,8 +2,8 @@
   "task_id": "triage-security-issues",
   "difficulty": "hard",
   "category": "multi_step",
-  "instructions": "There are 5 open security issues that need triage. For each one, read it carefully, assess the severity, and apply the appropriate severity label (critical, high, medium, or low) based on the actual risk described. Then assign each to the right team member based on their domain: alice owns authentication and access control, bob owns infrastructure and network security, and charlie owns application-level vulnerabilities. Add a triage comment to each issue summarizing the risk and recommending next steps.",
-  "max_steps": 25,
+  "instructions": "There are several open issues that need security triage. Before triaging, read the team roster (TEAM.md) and the severity classification guide (SECURITY_POLICY.md) in the repository to understand the ownership domains and severity criteria.\n\nFor each genuine security issue:\n1. Apply the correct severity label (critical/high/medium/low) based on the SECURITY_POLICY.md criteria\n2. Also apply the 'security' label to mark it as a security concern\n3. Assign to the correct team member based on TEAM.md ownership domains\n4. Add a triage comment that references the affected component and recommends specific next steps\n\nNote: Not all open issues are security issues. Non-security issues should NOT receive the 'security' label.\n\nAfter triaging all security issues, create a summary issue titled 'Security Triage Report' that lists each triaged issue with its assigned severity and owner.",
+  "max_steps": 30,
   "seed": {
     "repos": [
       {"id": 1, "name": "backend", "description": "Backend API service", "default_branch": "main"}
@@ -12,7 +12,9 @@
       {"id": 1, "repo_id": 1, "name": "main", "base_branch": "main"}
     ],
     "files": [
-      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"}
+      {"id": 1, "branch_id": 1, "path": "src/app.py", "content": "from flask import Flask\napp = Flask(__name__)\n"},
+      {"id": 2, "branch_id": 1, "path": "TEAM.md", "content": "# Security Team Roster\n\n## Ownership Domains\n\n- **alice**: Authentication, access control, and identity management\n- **bob**: Infrastructure, networking, TLS/SSL, and deployment security\n- **charlie**: Application-level vulnerabilities (injection, XSS, CORS, API security)\n\n## Escalation\n- Critical issues: notify the security lead (alice) regardless of domain owner\n- All security issues must be labeled with the 'security' label in addition to severity\n"},
+      {"id": 3, "branch_id": 1, "path": "SECURITY_POLICY.md", "content": "# Severity Classification Guide\n\n## Critical\n- Direct access to production credentials, admin accounts, or secrets\n- Remote code execution vulnerabilities\n- Authentication bypass allowing unauthorized admin access\n\n## High\n- Data exfiltration vectors (CORS misconfig, SSRF)\n- Exposure of internal system information in production\n- Vulnerabilities in public-facing endpoints\n\n## Medium\n- Compliance violations (deprecated protocols, certificate issues)\n- Issues in non-production environments that could escalate\n- Missing security controls on internal services\n\n## Low\n- Policy violations with no evidence of exploitation\n- Informational findings from audits\n- Issues with existing mitigating controls\n"}
     ],
     "labels": [
       {"id": 1, "repo_id": 1, "name": "critical", "color": "b60205"},
@@ -20,16 +22,23 @@
       {"id": 3, "repo_id": 1, "name": "medium", "color": "fbca04"},
       {"id": 4, "repo_id": 1, "name": "low", "color": "0e8a16"},
       {"id": 5, "repo_id": 1, "name": "security", "color": "e11d48"},
-      {"id": 6, "repo_id": 1, "name": "triage", "color": "d876e3"}
+      {"id": 6, "repo_id": 1, "name": "triage", "color": "d876e3"},
+      {"id": 7, "repo_id": 1, "name": "bug", "color": "d73a4a"},
+      {"id": 8, "repo_id": 1, "name": "enhancement", "color": "a2eeef"}
     ],
     "issues": [
       {"id": 1, "repo_id": 1, "number": 1, "title": "Hardcoded admin password in auth module", "body": "The admin account password is hardcoded as 'admin123' in src/auth.py line 42. This was found during a routine code review. Any attacker who reads the source can gain full admin access.", "status": "open"},
       {"id": 2, "repo_id": 1, "number": 2, "title": "CORS misconfiguration allows any origin", "body": "The Access-Control-Allow-Origin header is set to '*' in production. This allows any website to make authenticated requests to our API, potentially enabling CSRF-like attacks to exfiltrate user data.", "status": "open"},
       {"id": 3, "repo_id": 1, "number": 3, "title": "TLS 1.0 still enabled on staging server", "body": "Our staging server at staging.example.com still accepts TLS 1.0 connections. While staging is not public-facing, this is a compliance concern and could be exploited if the network is compromised.", "status": "open"},
       {"id": 4, "repo_id": 1, "number": 4, "title": "Debug endpoints exposed in production", "body": "The /debug/vars and /debug/pprof endpoints are accessible in production without authentication. These leak internal server metrics, goroutine stacks, and memory profiles that could aid an attacker.", "status": "open"},
-      {"id": 5, "repo_id": 1, "number": 5, "title": "SSH key rotation overdue by 6 months", "body": "Our deploy SSH keys were last rotated over 6 months ago, exceeding our 90-day rotation policy. No evidence of compromise but this is a compliance violation.", "status": "open"}
+      {"id": 5, "repo_id": 1, "number": 5, "title": "SSH key rotation overdue by 6 months", "body": "Our deploy SSH keys were last rotated over 6 months ago, exceeding our 90-day rotation policy. No evidence of compromise but this is a compliance violation.", "status": "open"},
+      {"id": 6, "repo_id": 1, "number": 6, "title": "Upgrade Flask to 3.x", "body": "Flask 2.3.0 is nearing end-of-life. We should upgrade to Flask 3.x for new features and long-term support. No security vulnerabilities reported in our current version.", "status": "open"},
+      {"id": 7, "repo_id": 1, "number": 7, "title": "Add pagination to /api/users endpoint", "body": "The /api/users endpoint returns all users in a single response. For large datasets this causes slow responses. We need cursor-based pagination.", "status": "open"}
     ],
-    "issue_labels": [],
+    "issue_labels": [
+      {"issue_id": 6, "label_id": 8},
+      {"issue_id": 7, "label_id": 8}
+    ],
     "issue_comments": [],
     "pull_requests": [],
     "pr_reviews": [],
@@ -41,108 +50,171 @@
   },
   "eval_criteria": [
     {
-      "description": "Issue #1 has the 'critical' label",
+      "description": "Issue #1 (hardcoded password) has 'critical' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 1, "label_id": 1},
-      "weight": 0.07
+      "weight": 0.04
     },
     {
-      "description": "Issue #1 is assigned to alice",
+      "description": "Issue #1 has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 1, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #1 is assigned to alice (auth domain)",
       "table": "issues",
       "check": "field_equals",
-      "params": {"id": 1, "field": "assignee", "value": "alice"},
-      "weight": 0.07
+      "params": {"where": {"number": 1, "repo_id": 1}, "field": "assignee", "value": "alice"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #1 has a triage comment",
+      "description": "Issue #1 has a triage comment mentioning auth",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 1},
-      "weight": 0.06
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 1}, "field": "body", "substring": "auth"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #2 has the 'high' label",
+      "description": "Issue #2 (CORS) has 'high' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 2, "label_id": 2},
-      "weight": 0.07
+      "weight": 0.04
     },
     {
-      "description": "Issue #2 is assigned to charlie",
+      "description": "Issue #2 has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 2, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #2 is assigned to charlie (application-level)",
       "table": "issues",
       "check": "field_equals",
-      "params": {"id": 2, "field": "assignee", "value": "charlie"},
-      "weight": 0.07
+      "params": {"where": {"number": 2, "repo_id": 1}, "field": "assignee", "value": "charlie"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #2 has a triage comment",
+      "description": "Issue #2 has a triage comment mentioning CORS or origin",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 2},
-      "weight": 0.06
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 2}, "field": "body", "substring": "CORS"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #3 has the 'medium' label",
+      "description": "Issue #3 (TLS 1.0) has 'medium' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 3, "label_id": 3},
-      "weight": 0.07
+      "weight": 0.04
     },
     {
-      "description": "Issue #3 is assigned to bob",
+      "description": "Issue #3 has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 3, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #3 is assigned to bob (infrastructure)",
       "table": "issues",
       "check": "field_equals",
-      "params": {"id": 3, "field": "assignee", "value": "bob"},
-      "weight": 0.07
+      "params": {"where": {"number": 3, "repo_id": 1}, "field": "assignee", "value": "bob"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #3 has a triage comment",
+      "description": "Issue #3 has a triage comment mentioning TLS",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 3},
-      "weight": 0.06
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 3}, "field": "body", "substring": "TLS"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #4 has the 'high' label",
+      "description": "Issue #4 (debug endpoints) has 'high' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 4, "label_id": 2},
-      "weight": 0.07
+      "weight": 0.04
     },
     {
-      "description": "Issue #4 is assigned to charlie",
+      "description": "Issue #4 has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 4, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #4 is assigned to charlie (application-level)",
       "table": "issues",
       "check": "field_equals",
-      "params": {"id": 4, "field": "assignee", "value": "charlie"},
-      "weight": 0.07
+      "params": {"where": {"number": 4, "repo_id": 1}, "field": "assignee", "value": "charlie"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #4 has a triage comment",
+      "description": "Issue #4 has a triage comment mentioning debug",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 4},
-      "weight": 0.06
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 4}, "field": "body", "substring": "debug"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #5 has the 'low' label",
+      "description": "Issue #5 (SSH key rotation) has 'low' label",
       "table": "issue_labels",
       "check": "exists",
       "params": {"issue_id": 5, "label_id": 4},
-      "weight": 0.07
+      "weight": 0.04
     },
     {
-      "description": "Issue #5 is assigned to bob",
+      "description": "Issue #5 has 'security' label",
+      "table": "issue_labels",
+      "check": "exists",
+      "params": {"issue_id": 5, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Issue #5 is assigned to bob (infrastructure)",
       "table": "issues",
       "check": "field_equals",
-      "params": {"id": 5, "field": "assignee", "value": "bob"},
-      "weight": 0.07
+      "params": {"where": {"number": 5, "repo_id": 1}, "field": "assignee", "value": "bob"},
+      "weight": 0.04
     },
     {
-      "description": "Issue #5 has a triage comment",
+      "description": "Issue #5 has a triage comment mentioning SSH or rotation",
       "table": "issue_comments",
-      "check": "exists",
-      "params": {"issue_id": 5},
+      "check": "field_contains",
+      "params": {"where": {"issue_id": 5}, "field": "body", "substring": "rotation"},
+      "weight": 0.04
+    },
+    {
+      "description": "Distractor issue #6 (Flask upgrade) does NOT have 'security' label",
+      "table": "issue_labels",
+      "check": "not_exists",
+      "params": {"issue_id": 6, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Distractor issue #7 (pagination) does NOT have 'security' label",
+      "table": "issue_labels",
+      "check": "not_exists",
+      "params": {"issue_id": 7, "label_id": 5},
+      "weight": 0.04
+    },
+    {
+      "description": "Summary issue 'Security Triage Report' was created",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"repo_id": 1, "number": 8}, "field": "title", "substring": "Security Triage"},
+      "weight": 0.06
+    },
+    {
+      "description": "Summary issue body references multiple triaged issues",
+      "table": "issues",
+      "check": "field_contains",
+      "params": {"where": {"repo_id": 1, "number": 8}, "field": "body", "substring": "critical"},
       "weight": 0.06
     }
   ]

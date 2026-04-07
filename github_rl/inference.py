@@ -49,13 +49,15 @@ except ImportError:
 # Required environment variables
 # ---------------------------------------------------------------------------
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
-MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
+MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-7B-Instruct"
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or ""
 IMAGE_NAME = os.getenv("IMAGE_NAME") or os.getenv("LOCAL_IMAGE_NAME") or "github_rl"
 
 TASK_NAME = os.getenv("GITHUB_RL_TASK", "github-ops")
+TASK_ID = os.getenv("TASK_ID", "")          # e.g. "triage-security-issues"
+DIFFICULTY = os.getenv("DIFFICULTY", "")     # e.g. "hard", "expert"
 BENCHMARK = "github_rl"
-MAX_STEPS = 15
+MAX_STEPS = 40
 TEMPERATURE = 0.1
 MAX_TOKENS = 512
 SUCCESS_SCORE_THRESHOLD = 0.5
@@ -147,8 +149,8 @@ def format_observation(obs) -> str:
     return "\n".join(parts)
 
 
-def get_model_action(client: OpenAI, messages: list) -> str:
-    """Call the LLM and return the raw action string."""
+def get_model_action(client: OpenAI, messages: list) -> tuple[str, bool]:
+    """Call the LLM and return (action_string, success_bool)."""
     try:
         completion = client.chat.completions.create(
             model=MODEL_NAME,
@@ -158,10 +160,12 @@ def get_model_action(client: OpenAI, messages: list) -> str:
             stream=False,
         )
         text = (completion.choices[0].message.content or "").strip()
-        return text if text else '{"tool": "list_issues", "args": {"owner": "acme", "repo": "backend"}}'
+        if not text:
+            return '{"tool": "list_issues", "args": {"owner": "acme", "repo": "backend"}}', True
+        return text, True
     except Exception as exc:
         print(f"[DEBUG] Model request failed: {exc}", flush=True)
-        return '{"tool": "list_issues", "args": {"owner": "acme", "repo": "backend"}}'
+        return "", False
 
 
 # ---------------------------------------------------------------------------
@@ -176,10 +180,15 @@ async def main() -> None:
     score = 0.0
     success = False
 
-    log_start(task=TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
+    log_start(task=TASK_ID or DIFFICULTY or TASK_NAME, env=BENCHMARK, model=MODEL_NAME)
 
     try:
-        result = await env.reset()
+        reset_kwargs = {}
+        if TASK_ID:
+            reset_kwargs["task_id"] = TASK_ID
+        if DIFFICULTY:
+            reset_kwargs["difficulty"] = DIFFICULTY
+        result = await env.reset(**reset_kwargs)
         obs = result.observation
 
         messages = [
@@ -187,11 +196,23 @@ async def main() -> None:
             {"role": "user", "content": format_observation(obs)},
         ]
 
+        consecutive_failures = 0
+        max_consecutive_failures = 3
+
         for step in range(1, MAX_STEPS + 1):
             if result.done:
                 break
 
-            action_text = get_model_action(client, messages)
+            action_text, api_ok = get_model_action(client, messages)
+
+            if not api_ok:
+                consecutive_failures += 1
+                if consecutive_failures >= max_consecutive_failures:
+                    print(f"[DEBUG] {max_consecutive_failures} consecutive API failures, stopping early", flush=True)
+                    break
+                continue
+            consecutive_failures = 0
+
             messages.append({"role": "assistant", "content": action_text})
 
             result = await env.step(GithubRlAction(message=action_text))
