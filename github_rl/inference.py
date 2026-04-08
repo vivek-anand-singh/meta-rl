@@ -54,6 +54,8 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 
 # Optional — if you use from_docker_image():
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "github_rl")
+# Optional — connect to running env instead of starting Docker:
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "")
 
 TASK_NAME = os.getenv("GITHUB_RL_TASK", "github-ops")
 TASK_ID = os.getenv("TASK_ID", "")          # e.g. "triage-security-issues"
@@ -177,7 +179,18 @@ def get_model_action(client: OpenAI, messages: list) -> tuple[str, bool]:
 # ---------------------------------------------------------------------------
 async def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
-    env = await GithubRlEnv.from_docker_image(IMAGE_NAME)
+
+    # Connect to environment: try base_url first, then Docker image
+    if ENV_BASE_URL:
+        env = GithubRlEnv(base_url=ENV_BASE_URL)
+        await env.connect()
+    else:
+        try:
+            env = await GithubRlEnv.from_docker_image(IMAGE_NAME)
+        except Exception as e:
+            print(f"[DEBUG] Docker failed ({e}), falling back to HF Space", flush=True)
+            env = GithubRlEnv(base_url="https://vivekanandsingh-github-rl.hf.space")
+            await env.connect()
 
     rewards: List[float] = []
     steps_taken = 0
