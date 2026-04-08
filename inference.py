@@ -27,6 +27,7 @@ STDOUT FORMAT
 """
 
 import asyncio
+import math
 import os
 import textwrap
 from typing import List, Optional
@@ -142,6 +143,17 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+def clamp_score(s: float) -> float:
+    """Ensure score is strictly in (0, 1) — never 0.0 or 1.0."""
+    try:
+        s = float(s)
+    except (TypeError, ValueError):
+        return 0.5
+    if not math.isfinite(s):
+        return 0.5
+    return max(0.02, min(0.98, s))
+
+
 def format_observation(obs) -> str:
     """Format observation into a user prompt for the LLM."""
     parts = []
@@ -216,7 +228,7 @@ async def run_episode(env, client: OpenAI, task_id: str) -> None:
             result = await env.step(GithubRlAction(message=action_text))
             obs = result.observation
 
-            reward = result.reward or 0.0
+            reward = float(result.reward) if result.reward is not None else 0.05
             done = result.done
             error = None
 
@@ -230,8 +242,8 @@ async def run_episode(env, client: OpenAI, task_id: str) -> None:
             if done:
                 break
 
-        score = rewards[-1] if rewards else 0.0
-        score = min(max(score, 0.0), 1.0)
+        score = sum(rewards) / len(rewards) if rewards else 0.05
+        score = clamp_score(score)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     finally:
