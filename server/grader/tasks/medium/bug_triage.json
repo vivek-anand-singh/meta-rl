@@ -2,7 +2,7 @@
   "task_id": "triage-single-bug",
   "difficulty": "medium",
   "category": "issues",
-  "instructions": "Issue #1 ('Null pointer in user service') is a critical production bug. Triage it:\n1. Add the 'bug' label\n2. Add the 'critical' label\n3. Assign it to 'alice'\n4. Add a comment explaining that this is a P0 issue affecting production users and needs immediate investigation",
+  "instructions": "There's a production bug reported in the repo. Review it, triage it appropriately with severity and category labels, assign it to the right person, and leave a triage comment explaining the impact. Check the available labels and use your judgment on severity.",
   "max_steps": 10,
   "seed": {
     "repos": [

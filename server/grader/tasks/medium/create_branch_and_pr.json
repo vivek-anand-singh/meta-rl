@@ -2,7 +2,7 @@
   "task_id": "hotfix-branch-and-pr",
   "difficulty": "medium",
   "category": "pull_requests",
-  "instructions": "There's a bug reported in issue #1. Create a hotfix branch named 'hotfix/fix-login', then open a pull request from that branch to main with a title describing the login fix. Link the PR to issue #1.",
+  "instructions": "There's a bug reported in the repo that needs a hotfix. Read the issue to understand the problem, create an appropriate hotfix branch following standard naming conventions, open a PR back to main, and link it to the original issue.",
   "max_steps": 10,
   "seed": {
     "repos": [

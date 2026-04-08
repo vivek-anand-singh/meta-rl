@@ -61,9 +61,6 @@ SUCCESS_SCORE_THRESHOLD = 0.5
 
 # All available tasks — run all by default, or set TASK_ID to run one
 ALL_TASKS = [
-    "close-resolved-issue",
-    "create-bug-report",
-    "label-bug-issue",
     "triage-single-bug",
     "close-with-resolution",
     "hotfix-branch-and-pr",

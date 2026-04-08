@@ -1,85 +1,54 @@
 {
   "tasks": [
     {
-      "task_id": "close-resolved-issue",
-      "difficulty": "easy",
-      "max_steps": 5,
-      "num_criteria": 1,
-      "baseline_score": 0.0,
-      "progress": "0/1 criteria met"
-    },
-    {
-      "task_id": "create-bug-report",
-      "difficulty": "easy",
-      "max_steps": 5,
-      "num_criteria": 2,
-      "baseline_score": 0.0,
-      "progress": "0/2 criteria met"
-    },
-    {
-      "task_id": "label-bug-issue",
-      "difficulty": "easy",
-      "max_steps": 5,
-      "num_criteria": 1,
-      "baseline_score": 0.0,
-      "progress": "0/1 criteria met"
-    },
-    {
-      "task_id": "triage-single-bug",
-      "difficulty": "medium",
-      "max_steps": 10,
-      "num_criteria": 4,
-      "baseline_score": 0.0,
-      "progress": "0/4 criteria met"
-    },
-    {
-      "task_id": "close-with-resolution",
-      "difficulty": "medium",
-      "max_steps": 10,
-      "num_criteria": 4,
-      "baseline_score": 0.2,
-      "progress": "1/4 criteria met"
-    },
-    {
-      "task_id": "hotfix-branch-and-pr",
-      "difficulty": "medium",
-      "max_steps": 10,
-      "num_criteria": 3,
-      "baseline_score": 0.0,
-      "progress": "0/3 criteria met"
-    },
-    {
-      "task_id": "create-security-audit-board",
-      "difficulty": "hard",
-      "max_steps": 30,
-      "num_criteria": 17,
-      "baseline_score": 0.0,
-      "progress": "0/17 criteria met"
-    },
-    {
-      "task_id": "triage-security-issues",
-      "difficulty": "hard",
-      "max_steps": 30,
-      "num_criteria": 24,
-      "baseline_score": 0.08,
-      "progress": "2/24 criteria met"
-    },
-    {
       "task_id": "secure-feature-workflow",
       "difficulty": "expert",
       "max_steps": 40,
       "num_criteria": 19,
-      "baseline_score": 0.0,
-      "progress": "0/19 criteria met"
+      "baseline_score": 0.0
     },
     {
       "task_id": "zero-day-incident-response",
       "difficulty": "expert",
       "max_steps": 40,
       "num_criteria": 19,
-      "baseline_score": 0.0,
-      "progress": "0/19 criteria met"
+      "baseline_score": 0.0
+    },
+    {
+      "task_id": "create-security-audit-board",
+      "difficulty": "hard",
+      "max_steps": 30,
+      "num_criteria": 17,
+      "baseline_score": 0.0
+    },
+    {
+      "task_id": "triage-security-issues",
+      "difficulty": "hard",
+      "max_steps": 30,
+      "num_criteria": 24,
+      "baseline_score": 0.08
+    },
+    {
+      "task_id": "triage-single-bug",
+      "difficulty": "medium",
+      "max_steps": 10,
+      "num_criteria": 4,
+      "baseline_score": 0.0
+    },
+    {
+      "task_id": "close-with-resolution",
+      "difficulty": "medium",
+      "max_steps": 10,
+      "num_criteria": 4,
+      "baseline_score": 0.2
+    },
+    {
+      "task_id": "hotfix-branch-and-pr",
+      "difficulty": "medium",
+      "max_steps": 10,
+      "num_criteria": 3,
+      "baseline_score": 0.0
     }
   ],
-  "total_tasks": 10
+  "total_tasks": 7
 }

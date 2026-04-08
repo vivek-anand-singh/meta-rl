@@ -2,7 +2,7 @@
   "task_id": "close-with-resolution",
   "difficulty": "medium",
   "category": "issues",
-  "instructions": "Issue #1 ('Upgrade Python to 3.12') has been completed. Issue #2 ('Add retry logic to API client') is still in progress.\n\n1. Add a comment to issue #1 explaining that the Python upgrade to 3.12 has been deployed to production\n2. Close issue #1\n3. Add a comment to issue #2 with a status update that retry logic implementation is underway and will be ready by end of sprint",
+  "instructions": "Review the open issues in the repo. One of them has been completed and deployed to production — close it with a resolution comment. The other is still in progress — leave a status update comment on it. Figure out which is which from the issue descriptions.",
   "max_steps": 10,
   "seed": {
     "repos": [
