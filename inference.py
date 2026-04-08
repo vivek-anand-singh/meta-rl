@@ -61,9 +61,6 @@ SUCCESS_SCORE_THRESHOLD = 0.5
 
 # All available tasks — run all by default, or set TASK_ID to run one
 ALL_TASKS = [
-    "triage-single-bug",
-    "close-with-resolution",
-    "hotfix-branch-and-pr",
     "triage-security-issues",
     "create-security-audit-board",
     "zero-day-incident-response",
