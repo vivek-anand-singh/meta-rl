@@ -50,12 +50,8 @@ except ImportError:
 # ---------------------------------------------------------------------------
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-# Optional — if you use from_docker_image():
-IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "github_rl")
-# Optional — connect to running env instead of starting Docker:
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+IMAGE_NAME = os.getenv("IMAGE_NAME")  # Set by validator after docker build
 
 TASK_NAME = os.getenv("GITHUB_RL_TASK", "github-ops")
 TASK_ID = os.getenv("TASK_ID", "")          # e.g. "triage-security-issues"
@@ -178,19 +174,15 @@ def get_model_action(client: OpenAI, messages: list) -> tuple[str, bool]:
 # Main inference loop
 # ---------------------------------------------------------------------------
 async def main() -> None:
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-    # Connect to environment: try base_url first, then Docker image
-    if ENV_BASE_URL:
-        env = GithubRlEnv(base_url=ENV_BASE_URL)
+    # Connect to environment: Docker image if available, else HF Space
+    try:
+        env = await GithubRlEnv.from_docker_image(IMAGE_NAME)
+    except Exception as e:
+        print(f"[DEBUG] Docker failed ({e}), falling back to HF Space", flush=True)
+        env = GithubRlEnv(base_url="https://vivekanandsingh-github-rl.hf.space")
         await env.connect()
-    else:
-        try:
-            env = await GithubRlEnv.from_docker_image(IMAGE_NAME)
-        except Exception as e:
-            print(f"[DEBUG] Docker failed ({e}), falling back to HF Space", flush=True)
-            env = GithubRlEnv(base_url="https://vivekanandsingh-github-rl.hf.space")
-            await env.connect()
 
     rewards: List[float] = []
     steps_taken = 0
